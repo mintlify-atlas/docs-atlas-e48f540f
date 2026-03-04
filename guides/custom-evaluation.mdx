@@ -1,0 +1,811 @@
+---
+title: 'Custom Evaluation Metrics'
+description: 'Create and use custom G-Eval criteria for claim quality assessment'
+icon: 'sliders'
+---
+
+CheckThat AI uses DeepEval's G-Eval framework for claim quality assessment. While the platform provides default evaluation criteria, you can define custom metrics tailored to your specific fact-checking needs.
+
+## Understanding G-Eval
+
+G-Eval is a framework that uses LLMs to evaluate text quality based on defined criteria. The system:
+
+<Steps>
+  <Step title="Define Criteria">
+    Specify what aspects to evaluate (e.g., verifiability, clarity)
+  </Step>
+  
+  <Step title="Create Evaluation Steps">
+    Define specific checks the evaluator should perform
+  </Step>
+  
+  <Step title="LLM Assessment">
+    An LLM scores the claim (0.0-1.0) based on criteria
+  </Step>
+  
+  <Step title="Generate Feedback">
+    The evaluator provides specific improvement suggestions
+  </Step>
+</Steps>
+
+## Default Evaluation Criteria
+
+CheckThat AI's default criteria (from `evals.py:25-50`):
+
+<Accordion title="View STATIC_EVAL_SPECS">
+
+```python
+STATIC_EVAL_SPECS = StaticEvaluation(
+    criteria="""Evaluate the normalized claim against the following criteria: 
+    Verifiability and Self-Containment, 
+    Claim Centrality and Extraction Quality,
+    Conciseness and Clarity, 
+    Check-Worthiness Alignment, 
+    and Factual Consistency""",
+    
+    evaluation_steps=[
+        # Verifiability and Self-Containment
+        "Check if the claim contains verifiable factual assertions that can be independently checked",
+        "Check if the claim is self-contained without requiring additional context from the original post",
+        
+        # Claim Centrality and Extraction Quality
+        "Check if the normalized claim captures the central assertion from the source text while removing extraneous information",
+        "Check if the claim represents the core factual assertion that requires fact-checking, not peripheral details",
+        
+        # Conciseness and Clarity
+        "Check if the claim is presented in a straightforward, concise manner that fact-checkers can easily process",
+        "Check if the claim is significantly shorter than source posts while preserving essential meaning",
+        
+        # Check-Worthiness Alignment
+        "Check if the normalized claim meets check-worthiness standards for fact-verification",
+        "Check if the claim has general public interest, potential for harm, and likelihood of being false",
+        
+        # Factual Consistency
+        "Check if the normalized claim is factually consistent with the source material without hallucinations or distortions",
+        "Check if the claim accurately reflects the original assertion without introducing new information",
+    ]
+)
+```
+
+These criteria evaluate 5 key dimensions:
+
+1. **Verifiability and Self-Containment** (20%)
+2. **Claim Centrality and Extraction Quality** (20%)
+3. **Conciseness and Clarity** (20%)
+4. **Check-Worthiness Alignment** (20%)
+5. **Factual Consistency** (20%)
+
+</Accordion>
+
+## Creating Custom Metrics
+
+### Basic Custom Metric
+
+Define a custom G-Eval metric with your own criteria:
+
+```python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCaseParams
+from deepeval.models import GPTModel
+from checkthat import CheckThat
+
+# Create custom evaluation metric
+custom_metric = GEval(
+    name="Medical Claim Accuracy",
+    criteria="""Evaluate medical claims for:
+    1. Scientific accuracy
+    2. Source attribution
+    3. Hedge appropriateness (avoiding absolutes like 'cures' or 'eliminates')
+    4. Harm potential
+    """,
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    evaluation_steps=[
+        "Check if the claim uses scientifically accurate terminology",
+        "Check if medical sources or studies are properly attributed",
+        "Check if the claim uses appropriate hedging (e.g., 'may help' vs 'cures')",
+        "Check if the claim could cause harm if believed to be true",
+        "Check if the claim is verifiable through peer-reviewed research"
+    ],
+    model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-openai-key"),
+    threshold=0.7
+)
+
+# Use custom metric with CheckThat
+client = CheckThat(api_key="your-checkthat-key")
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": "Drinking 8 glasses of water daily cures kidney disease"
+        }
+    ],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_metrics=custom_metric,  # Use custom metric
+    refine_threshold=0.7,
+    refine_max_iters=3
+)
+
+print(response.choices[0].message.content)
+print(response.refinement_metadata.refinement_history)
+```
+
+### Domain-Specific Metrics
+
+<Tabs>
+  <Tab title="Medical Claims">
+    ```python
+    from deepeval.metrics import GEval
+    from deepeval.test_case import LLMTestCaseParams
+    from deepeval.models import GPTModel
+    
+    medical_metric = GEval(
+        name="Medical Fact-Check Quality",
+        criteria="""Evaluate medical claims for:
+        - Scientific accuracy and terminology
+        - Proper source attribution (studies, institutions)
+        - Appropriate hedging (avoid absolutes)
+        - Potential harm if misinformation spreads
+        - Verifiability through medical databases
+        """,
+        evaluation_steps=[
+            "Verify medical terminology is used correctly",
+            "Check if specific studies, doctors, or institutions are properly named",
+            "Ensure claims use 'may', 'can', 'associated with' rather than 'cures', 'eliminates', 'guarantees'",
+            "Assess potential harm: Could believing this false claim cause injury or death?",
+            "Confirm claim can be verified via PubMed, medical journals, or health authorities",
+            "Check if the claim distinguishes between correlation and causation"
+        ],
+        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+        threshold=0.75
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Political Claims">
+    ```python
+    political_metric = GEval(
+        name="Political Statement Verification",
+        criteria="""Evaluate political claims for:
+        - Specific, verifiable facts (not opinions)
+        - Clear attribution to named politicians or parties
+        - Temporal specificity (dates, timeframes)
+        - Neutrality (avoiding loaded language)
+        - Public record verifiability
+        """,
+        evaluation_steps=[
+            "Distinguish factual claims from political opinions or rhetoric",
+            "Verify full names and official titles are included",
+            "Check if specific dates, terms, or sessions are mentioned",
+            "Ensure claim uses neutral language (remove 'allegedly', 'claims to', etc.)",
+            "Confirm claim can be verified through official government records or voting records",
+            "Check that the claim represents a single, discrete assertion"
+        ],
+        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+        threshold=0.8  # Higher bar for political claims
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Statistical Claims">
+    ```python
+    statistical_metric = GEval(
+        name="Statistical Claim Precision",
+        criteria="""Evaluate statistical claims for:
+        - Exact numbers and percentages
+        - Clear population or sample specification
+        - Timeframe specification
+        - Source attribution
+        - Context preservation (denominators, baselines)
+        """,
+        evaluation_steps=[
+            "Verify specific numbers/percentages are preserved from original",
+            "Check if the population being measured is clearly stated",
+            "Ensure timeframes are specific (not 'recent' but 'in 2024')",
+            "Confirm statistical source is named (census, study, poll)",
+            "Check that context is preserved (e.g., '30% increase from baseline of X')",
+            "Verify claim doesn't conflate absolute numbers with rates/percentages"
+        ],
+        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+        threshold=0.85
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Visual Content">
+    ```python
+    visual_content_metric = GEval(
+        name="Visual Content Claim Verification",
+        criteria="""Evaluate claims about images/videos for:
+        - Explicit mention this is visual content
+        - Description of visual elements
+        - Attribution (who appears, where, when)
+        - Avoidance of unverifiable interpretations
+        - Context about content origin
+        """,
+        evaluation_steps=[
+            "Check if claim explicitly states this describes a photo/video/image",
+            "Verify visible elements are objectively described (not interpreted)",
+            "Ensure people, places, and times are specifically named if identifiable",
+            "Confirm claim avoids subjective interpretations ('appears happy', 'seems to show')",
+            "Check if source or original context is mentioned when known",
+            "Verify claim doesn't assert facts not visible in the content itself"
+        ],
+        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+        threshold=0.7
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Using Custom Metrics
+
+### Single Custom Metric
+
+<CodeGroup>
+
+```python Python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCaseParams
+from deepeval.models import GPTModel
+from checkthat import CheckThat
+
+# Define custom metric
+my_metric = GEval(
+    name="Brand Mention Accuracy",
+    criteria="Ensure brand names, products, and company names are accurately extracted and spelled correctly",
+    evaluation_steps=[
+        "Check if all brand names from the original are included",
+        "Verify spelling of company and product names",
+        "Confirm brands are not confused with generic terms"
+    ],
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-openai-key"),
+    threshold=0.8
+)
+
+# Use with refinement
+client = CheckThat(api_key="your-checkthat-key")
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": "Tesla's new Model S Plaid achieves 0-60 mph in under 2 seconds"
+        }
+    ],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_metrics=my_metric,
+    refine_threshold=0.8,
+    refine_max_iters=3
+)
+
+print(f"Refined claim: {response.choices[0].message.content}")
+
+# Check evaluation scores
+for history in response.refinement_metadata.refinement_history:
+    print(f"{history.claim_type}: {history.score:.2f}")
+    print(f"  Claim: {history.claim}")
+    print(f"  Feedback: {history.feedback[:150]}...\n")
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+import { GEval, LLMTestCaseParams, GPTModel } from 'deepeval';
+
+// Define custom metric
+const myMetric = new GEval({
+  name: 'Brand Mention Accuracy',
+  criteria: 'Ensure brand names, products, and company names are accurately extracted and spelled correctly',
+  evaluationSteps: [
+    'Check if all brand names from the original are included',
+    'Verify spelling of company and product names',
+    'Confirm brands are not confused with generic terms'
+  ],
+  evaluationParams: [LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+  model: new GPTModel({ model: 'gpt-5-2025-08-07', apiKey: process.env.OPENAI_API_KEY }),
+  threshold: 0.8
+});
+
+// Use with refinement
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [
+    {
+      role: 'user',
+      content: "Tesla's new Model S Plaid achieves 0-60 mph in under 2 seconds"
+    }
+  ],
+  refine_claims: true,
+  refine_model: 'gpt-5-2025-08-07',
+  refine_metrics: myMetric,
+  refine_threshold: 0.8,
+  refine_max_iters: 3
+});
+
+console.log(`Refined claim: ${response.choices[0].message.content}`);
+```
+
+</CodeGroup>
+
+### Multiple Custom Metrics
+
+Combine multiple evaluation dimensions:
+
+```python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCaseParams
+from deepeval.models import GPTModel
+from checkthat import CheckThat
+
+# Define multiple metrics
+accuracy_metric = GEval(
+    name="Factual Accuracy",
+    criteria="Claim must be factually accurate and verifiable",
+    evaluation_steps=[
+        "Check if claim can be verified through reliable sources",
+        "Verify no factual errors introduced during extraction"
+    ],
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+    threshold=0.8
+)
+
+clarity_metric = GEval(
+    name="Claim Clarity",
+    criteria="Claim must be clear, concise, and unambiguous",
+    evaluation_steps=[
+        "Check if claim is self-contained",
+        "Verify claim has no ambiguous references",
+        "Ensure claim is concise (under 25 words)"
+    ],
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    model=GPTModel(model="gpt-5-2025-08-07", _openai_api_key="your-key"),
+    threshold=0.75
+)
+
+# Note: Currently, the API accepts a single metric via refine_metrics
+# For multiple metrics, you need to combine them or run separately
+
+# Option 1: Sequential evaluation with different metrics
+client = CheckThat(api_key="your-checkthat-key")
+
+# First pass: accuracy
+response1 = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": post}],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_metrics=accuracy_metric,
+    refine_threshold=0.8
+)
+
+# Second pass: clarity (using first pass result)
+response2 = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": response1.choices[0].message.content}],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_metrics=clarity_metric,
+    refine_threshold=0.75
+)
+
+print(f"Final claim: {response2.choices[0].message.content}")
+```
+
+## Evaluation Model Selection
+
+Different models have different evaluation strengths:
+
+<Tabs>
+  <Tab title="GPT-5 (OpenAI)">
+    **Strengths:**
+    - Strong reasoning capabilities
+    - Consistent scoring
+    - Good at nuanced criteria
+    
+    **Best for:**
+    - Complex multi-step evaluations
+    - Logical consistency checks
+    - Technical accuracy assessment
+    
+    ```python
+    from deepeval.models import GPTModel
+    
+    evaluator = GPTModel(
+        model="gpt-5-2025-08-07",
+        _openai_api_key="your-key"
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Claude (Anthropic)">
+    **Strengths:**
+    - Excellent at identifying harm potential
+    - Nuanced language understanding
+    - Conservative/careful assessments
+    
+    **Best for:**
+    - Medical/health claims (safety)
+    - Hate speech detection
+    - Subtle misinformation
+    
+    ```python
+    from deepeval.models import AnthropicModel
+    
+    evaluator = AnthropicModel(
+        model="claude-opus-4-1-20250805",
+        _anthropic_api_key="your-key"
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Gemini (Google)">
+    **Strengths:**
+    - Multilingual evaluation
+    - Broad knowledge base
+    - Fast evaluation
+    
+    **Best for:**
+    - Non-English claims
+    - General knowledge verification
+    - High-throughput evaluation
+    
+    ```python
+    from deepeval.models import GeminiModel
+    
+    evaluator = GeminiModel(
+        model="gemini-2.5-pro",
+        api_key="your-key"
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Grok (xAI)">
+    **Strengths:**
+    - Real-time knowledge
+    - Alternative perspective
+    - Good at detecting bias
+    
+    **Best for:**
+    - Current events
+    - Controversial claims
+    - Bias detection
+    
+    ```python
+    from deepeval.models import GrokModel
+    
+    evaluator = GrokModel(
+        model="grok-4-0709",
+        api_key="your-key"
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Interpreting Scores
+
+### Score Ranges
+
+G-Eval produces scores from 0.0 to 1.0:
+
+<Tabs>
+  <Tab title="Score Interpretation">
+    | Score Range | Quality Level | Recommendation |
+    |-------------|---------------|----------------|
+    | 0.90 - 1.0 | Excellent | Publish as-is |
+    | 0.75 - 0.89 | Good | Minor refinement optional |
+    | 0.60 - 0.74 | Acceptable | Refinement recommended |
+    | 0.45 - 0.59 | Poor | Major refinement needed |
+    | 0.00 - 0.44 | Very Poor | Regenerate claim |
+  </Tab>
+  
+  <Tab title="By Use Case">
+    **High-Stakes Fact-Checking:**
+    - Minimum: 0.80
+    - Target: 0.85+
+    - Examples: Medical advice, legal claims, financial info
+    
+    **General Fact-Checking:**
+    - Minimum: 0.65
+    - Target: 0.75+
+    - Examples: News verification, social media claims
+    
+    **Content Moderation:**
+    - Minimum: 0.50
+    - Target: 0.65+
+    - Examples: Flagging for review, batch processing
+    
+    **Exploratory Analysis:**
+    - Minimum: 0.40
+    - Target: 0.55+
+    - Examples: Research, trend detection
+  </Tab>
+  
+  <Tab title="Score Trends">
+    Monitor score improvements across iterations:
+    
+    ```python
+    # Analyze refinement effectiveness
+    history = response.refinement_metadata.refinement_history
+    scores = [h.score for h in history]
+    
+    initial_score = scores[0]
+    final_score = scores[-1]
+    improvement = final_score - initial_score
+    
+    print(f"Initial: {initial_score:.3f}")
+    print(f"Final: {final_score:.3f}")
+    print(f"Improvement: {improvement:.3f} ({improvement/initial_score*100:.1f}%)")
+    
+    # Check if refinement is effective
+    if improvement < 0.05:
+        print("⚠️ Minimal improvement - consider different approach")
+    elif improvement > 0.20:
+        print("✅ Strong improvement - refinement effective")
+    else:
+        print("✓ Moderate improvement")
+    ```
+  </Tab>
+</Tabs>
+
+### Reading Feedback
+
+The evaluator provides detailed reasoning:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": post}],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_threshold=0.7,
+    refine_max_iters=3
+)
+
+# Parse feedback
+for iteration in response.refinement_metadata.refinement_history:
+    print(f"\n{'='*60}")
+    print(f"Iteration: {iteration.claim_type}")
+    print(f"Score: {iteration.score:.2f}")
+    print(f"\nClaim:")
+    print(f"  {iteration.claim}")
+    print(f"\nFeedback:")
+    print(f"  {iteration.feedback}")
+    
+    # Identify specific issues mentioned
+    if "verif" in iteration.feedback.lower():
+        print("  ⚠️ Verifiability issue detected")
+    if "ambig" in iteration.feedback.lower():
+        print("  ⚠️ Ambiguity detected")
+    if "context" in iteration.feedback.lower():
+        print("  ⚠️ Context issue detected")
+```
+
+**Example output:**
+```
+============================================================
+Iteration: original
+Score: 0.58
+
+Claim:
+  Asif Mumtaz appointed as PMC Chairman
+
+Feedback:
+  Verifiability: 7/10 - The appointment is verifiable through official records. 
+  Self-Containment: 4/10 - The claim uses the acronym 'PMC' without explanation, 
+  making it unclear what organization is involved. Named entities are incomplete - 
+  missing full title of the appointee. 
+  
+  Suggestions: Spell out 'PMC' as 'Pakistan Medical Commission' and include 
+  the full title 'Lieutenant Retired General'.
+
+  ⚠️ Context issue detected
+  ⚠️ Verifiability issue detected
+```
+
+## Complete Example: Custom Medical Metric
+
+Putting it all together:
+
+```python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCaseParams
+from deepeval.models import AnthropicModel  # Using Claude for safety focus
+from checkthat import CheckThat
+
+# Define comprehensive medical evaluation metric
+medical_safety_metric = GEval(
+    name="Medical Claim Safety & Accuracy",
+    criteria="""Evaluate medical claims for:
+    1. Scientific accuracy and proper terminology
+    2. Source attribution (studies, institutions, experts)
+    3. Appropriate hedging (avoiding dangerous absolutes)
+    4. Harm potential if misinformation spreads
+    5. Verifiability through medical literature
+    6. Distinction between correlation and causation
+    """,
+    evaluation_steps=[
+        "Verify medical terminology is used correctly and precisely",
+        "Check if specific studies, institutions, or medical experts are named",
+        "Ensure claims use appropriate hedging: 'may help', 'associated with', 'can reduce risk' rather than 'cures', 'eliminates', 'prevents'",
+        "Assess harm potential: Rate from 0-10 how harmful believing this false claim could be",
+        "Confirm claim can be verified via PubMed, peer-reviewed journals, or official health organizations (WHO, CDC)",
+        "Check if the claim distinguishes correlation from causation (e.g., 'associated with' vs 'causes')",
+        "Verify claim doesn't make absolute promises about health outcomes",
+        "Ensure any numerical claims (percentages, dosages) are precise and sourced"
+    ],
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    model=AnthropicModel(
+        model="claude-opus-4-1-20250805",
+        _anthropic_api_key="your-anthropic-key"
+    ),
+    threshold=0.80  # High bar for medical claims
+)
+
+# Test with medical misinformation
+client = CheckThat(api_key="your-checkthat-key")
+
+medical_posts = [
+    "Drinking 8 glasses of water daily cures kidney disease and prevents cancer.",
+    "Eating vaginal fluids makes you immune to cancer. Scientists at St. Austin University found...",
+    "Gargling with warm salt water eliminates coronavirus before it reaches your lungs.",
+    "New study shows vitamin D reduces COVID-19 risk by 80%."
+]
+
+for post in medical_posts:
+    print(f"\n{'='*80}")
+    print(f"Original Post: {post[:60]}...")
+    print("="*80)
+    
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model="claude-opus-4-1-20250805",  # Use Claude for evaluation
+        refine_metrics=medical_safety_metric,
+        refine_threshold=0.80,
+        refine_max_iters=4  # Allow more iterations for safety
+    )
+    
+    # Display results
+    metadata = response.refinement_metadata
+    history = metadata.refinement_history
+    
+    print(f"\nInitial Claim (Score: {history[0].score:.2f}):")
+    print(f"  {history[0].claim}")
+    
+    print(f"\nFinal Claim (Score: {history[-1].score:.2f}):")
+    print(f"  {history[-1].claim}")
+    
+    improvement = history[-1].score - history[0].score
+    print(f"\nImprovement: {improvement:.2f} ({len(history)-1} iterations)")
+    
+    if history[-1].score >= 0.80:
+        print("✅ PASSED: Meets safety threshold")
+    else:
+        print("⚠️ WARNING: Below safety threshold")
+        print(f"\nFinal Feedback:\n{history[-1].feedback}")
+```
+
+**Example output:**
+```
+================================================================================
+Original Post: Gargling with warm salt water eliminates coronavirus befo...
+================================================================================
+
+Initial Claim (Score: 0.52):
+  Gargling with warm salt water eliminates coronavirus from throat
+
+Final Claim (Score: 0.82):
+  Gargling with warm salt water may help reduce coronavirus in the throat
+
+Improvement: 0.30 (3 iterations)
+✅ PASSED: Meets safety threshold
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start with Defaults" icon="play">
+    Use STATIC_EVAL_SPECS first, customize only if needed
+  </Card>
+  <Card title="Be Specific" icon="bullseye">
+    Clear evaluation steps produce better feedback
+  </Card>
+  <Card title="Match Domain" icon="puzzle-piece">
+    Medical claims need different criteria than political ones
+  </Card>
+  <Card title="Test Thresholds" icon="sliders">
+    A/B test different thresholds on your data
+  </Card>
+  <Card title="Monitor Scores" icon="chart-line">
+    Track score distributions to calibrate metrics
+  </Card>
+  <Card title="Use Strong Models" icon="brain">
+    Better evaluation models = better refinement
+  </Card>
+</CardGroup>
+
+<Tip>
+  When creating custom metrics, test them on a diverse set of claims to ensure they generalize well. A metric that works perfectly on one type of claim might fail on others.
+</Tip>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Scores Too High or Too Low">
+    **Problem:** All claims score 0.9+ or all score below 0.5
+    
+    **Solutions:**
+    - Adjust criteria specificity (too vague → scores too high)
+    - Review evaluation steps (too strict → scores too low)
+    - Try a different evaluation model
+    - Adjust threshold to match your quality expectations
+    
+    ```python
+    # Debug scoring
+    test_claims = [
+        "Good claim example",
+        "Bad claim example",
+        "Edge case example"
+    ]
+    
+    for claim in test_claims:
+        response = client.chat.completions.create(
+            model="gpt-5-2025-08-07",
+            messages=[{"role": "user", "content": claim}],
+            refine_claims=True,
+            refine_model="gpt-5-2025-08-07",
+            refine_metrics=my_metric,
+            refine_threshold=0.5,  # Low threshold to see all scores
+            refine_max_iters=0  # No refinement, just evaluate
+        )
+        
+        score = response.refinement_metadata.refinement_history[0].score
+        print(f"{claim[:40]:40s} | Score: {score:.2f}")
+    ```
+  </Accordion>
+  
+  <Accordion title="Inconsistent Scores">
+    **Problem:** Same claim gets different scores
+    
+    **Solutions:**
+    - Set `temperature=0` for deterministic evaluation
+    - Use more specific evaluation steps
+    - Try a more consistent model (GPT-4/5 > GPT-3.5)
+  </Accordion>
+  
+  <Accordion title="Refinement Not Improving">
+    **Problem:** Scores don't increase after refinement
+    
+    **Solutions:**
+    - Check if evaluation steps are actionable
+    - Review feedback - is it specific enough?
+    - Try a different refine_model
+    - Lower threshold to see if intermediate scores improve
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/completions/create">
+    Complete parameter documentation
+  </Card>
+  <Card title="DeepEval Docs" icon="book" href="https://docs.confident-ai.com/">
+    Learn more about G-Eval framework
+  </Card>
+</CardGroup>

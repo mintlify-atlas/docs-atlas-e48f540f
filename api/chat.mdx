@@ -1,0 +1,435 @@
+---
+title: 'Chat Endpoint'
+description: 'Real-time chat interface for claim normalization and fact-checking'
+---
+
+## Overview
+
+The `/chat` endpoint provides a streaming chat interface optimized for claim normalization. It applies CheckThat AI's specialized prompts and returns real-time streaming responses.
+
+## Endpoint
+
+```
+POST /chat
+```
+
+## Authentication
+
+Include your LLM provider's API key in the request body:
+
+```json
+{
+  "api_key": "sk-proj-your-api-key"
+}
+```
+
+See [Authentication](/api/authentication) for more details.
+
+## Request Parameters
+
+<ParamField path="user_query" type="string" required>
+  The user's input text containing claims to normalize or verify.
+  
+  Cannot be empty or contain only whitespace.
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The LLM model to use for processing. Must be one of the supported models.
+  
+  Examples: `gpt-4o`, `claude-sonnet-4-20250514`, `grok-4-0709`, `gemini-2.5-pro`
+</ParamField>
+
+<ParamField path="api_key" type="string">
+  API key for the LLM provider. Required for most models.
+  
+  Not required for free models like `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free` or Gemini models.
+</ParamField>
+
+<ParamField path="conversation_id" type="string">
+  Optional conversation ID to retrieve conversation history from storage.
+  
+  When provided, the system retrieves previous messages to maintain context.
+</ParamField>
+
+<ParamField path="conversation_history" type="array">
+  Optional array of previous conversation messages.
+  
+  Used as a fallback if `conversation_id` is not provided or history is not found.
+  
+  <Expandable title="Message format">
+    <ParamField path="role" type="string" required>
+      Message role: `user`, `assistant`, or `system`
+    </ParamField>
+    
+    <ParamField path="content" type="string" required>
+      Message content text
+    </ParamField>
+    
+    <ParamField path="timestamp" type="string">
+      ISO 8601 timestamp (optional)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="max_history_tokens" type="integer" default="4000">
+  Maximum number of tokens to include from conversation history.
+  
+  Helps manage context window limits for different models.
+</ParamField>
+
+## Supported Models
+
+The endpoint accepts models from the following providers:
+
+### OpenAI Models
+- `gpt-5-2025-08-07` (GPT-5)
+- `gpt-5-nano-2025-08-07` (GPT-5 nano)
+- `o3-2025-04-16` (o3)
+- `o4-mini-2025-04-16` (o4-mini)
+
+### Anthropic Models
+- `claude-sonnet-4-20250514` (Claude Sonnet 4)
+- `claude-opus-4-1-20250805` (Claude Opus 4.1)
+
+### Google Gemini Models
+- `gemini-2.5-pro` (Gemini 2.5 Pro)
+- `gemini-2.5-flash` (Gemini 2.5 Flash)
+
+### xAI Models
+- `grok-3` (Grok 3)
+- `grok-4-0709` (Grok 4)
+- `grok-3-mini` (Grok 3 Mini)
+
+### Together AI Models (Free)
+- `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free` (Llama 3.3 70B)
+- `deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free` (DeepSeek R1)
+
+## Response Format
+
+The endpoint returns a **streaming response** with `Content-Type: text/plain; charset=utf-8`.
+
+### Response Headers
+
+```http
+Content-Type: text/plain; charset=utf-8
+Cache-Control: no-cache
+X-Accel-Buffering: no
+Connection: keep-alive
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 9
+X-RateLimit-Reset: 1709567890
+```
+
+### Streaming Response
+
+The response streams text chunks as they're generated:
+
+```text
+Based on your input, I've identified the following claims:
+
+1. The Earth is flat.
+**Normalized Claim:** The Earth has a flat surface rather than being spherical.
+**Verifiability:** HIGH
+**Confidence:** 0.95
+
+2. The moon landing was faked.
+**Normalized Claim:** The 1969 Apollo 11 moon landing was staged and did not actually occur.
+**Verifiability:** HIGH  
+**Confidence:** 0.92
+```
+
+## Example Requests
+
+### Basic Request
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "The Eiffel Tower is in Paris, France and was built in 1889.",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-your-openai-key"
+  }'
+```
+
+### With Conversation History
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "What about the Statue of Liberty?",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-your-openai-key",
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "Tell me about landmarks in France."
+      },
+      {
+        "role": "assistant",
+        "content": "The Eiffel Tower is a famous landmark in Paris..."
+      }
+    ]
+  }'
+```
+
+### Using Free Model
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Climate change is causing global temperatures to rise.",
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+  }'
+```
+
+### With Anthropic Claude
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Vaccines contain microchips for tracking.",
+    "model": "claude-sonnet-4-20250514",
+    "api_key": "sk-ant-your-anthropic-key"
+  }'
+```
+
+### Python Example with Streaming
+
+```python
+import requests
+import json
+
+url = "https://api.checkthat-ai.com/chat"
+headers = {"Content-Type": "application/json"}
+data = {
+    "user_query": "The Great Wall of China is visible from space.",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-your-openai-key"
+}
+
+# Stream the response
+with requests.post(url, json=data, headers=headers, stream=True) as response:
+    response.raise_for_status()
+    for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
+        if chunk:
+            print(chunk, end='', flush=True)
+```
+
+### JavaScript Example with Streaming
+
+```javascript
+const response = await fetch('https://api.checkthat-ai.com/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    user_query: 'The Pacific Ocean is the largest ocean on Earth.',
+    model: 'gpt-4o',
+    api_key: 'sk-proj-your-openai-key'
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  console.log(chunk);
+}
+```
+
+## Error Responses
+
+### Invalid Model
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "detail": "Invalid model. Must be one of: gpt-4o, claude-sonnet-4-20250514, ..."
+}
+```
+
+### Empty Query
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "detail": "User query cannot be empty"
+}
+```
+
+### Invalid API Key
+
+**Status Code:** `403 Forbidden`
+
+Streaming response:
+```text
+[Error 403: Forbidden - Invalid API key provided]
+```
+
+### Rate Limit Exceeded
+
+**Status Code:** `429 Too Many Requests`
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "You've exceeded the rate limit for Chat endpoints. Please wait 45 seconds before trying again.",
+  "details": {
+    "limit": "10 requests per 60 seconds",
+    "retry_after": 45,
+    "endpoint": "/chat"
+  }
+}
+```
+
+### Server Error
+
+**Status Code:** `500 Internal Server Error`
+
+Streaming response:
+```text
+[Internal server error: <error details>]
+```
+
+## System Prompts
+
+The `/chat` endpoint automatically applies CheckThat AI's specialized prompts:
+
+### System Prompt
+Defines the AI's role as a claim normalization and fact-checking assistant.
+
+### Few-Shot CoT Prompt
+Provides examples of proper claim normalization using Chain-of-Thought reasoning.
+
+### Chat Guide
+Instructions for handling conversational context and maintaining consistency.
+
+<Note>
+  These prompts are applied automatically. You don't need to include them in your `user_query`.
+</Note>
+
+## Conversation Management
+
+The endpoint supports conversation continuity through two mechanisms:
+
+### 1. Conversation ID
+
+Provide a `conversation_id` to retrieve stored conversation history:
+
+```json
+{
+  "user_query": "Continue our discussion",
+  "model": "gpt-4o",
+  "conversation_id": "conv-123456",
+  "api_key": "sk-proj-..."
+}
+```
+
+The system retrieves up to `max_history_tokens` worth of messages.
+
+### 2. Explicit History
+
+Provide conversation history directly:
+
+```json
+{
+  "user_query": "What else can you tell me?",
+  "model": "gpt-4o",
+  "conversation_history": [
+    {"role": "user", "content": "Previous message"},
+    {"role": "assistant", "content": "Previous response"}
+  ],
+  "api_key": "sk-proj-..."
+}
+```
+
+## Rate Limiting
+
+The `/chat` endpoint has the following limits:
+
+- **10 requests per 60 seconds** per IP address
+- Rate limit headers included in all responses
+- `429` status code when limit exceeded
+- Automatic retry after the specified wait time
+
+See [Rate Limiting](/api/overview#rate-limiting) for details.
+
+## Implementation Details
+
+### LLM Router
+
+The endpoint uses `LLMRouter` to automatically select the correct client based on the model:
+
+```python
+# Source: api/routes/chat.py:60
+client = LLMRouter(model=request.model, api_key=api_key).getAPIClient()
+```
+
+### Streaming Generator
+
+Responses are generated using a streaming generator function:
+
+```python
+# Source: api/routes/chat.py:77-115
+def stream_response():
+    for chunk in client.generate_streaming_response(
+        sys_prompt=sys_prompt,
+        user_prompt=full_user_prompt,
+        conversation_history=conversation_history
+    ):
+        yield content
+```
+
+### Error Handling
+
+The endpoint provides detailed error messages in the stream:
+
+- `ValueError` → `[Error 400: Bad Request - ...]`
+- `PermissionError` → `[Error 403: Forbidden - ...]`
+- Other exceptions → `[<error message>]`
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Handle Streaming Responses">
+    Always process streaming responses incrementally rather than waiting for completion. This provides better user experience and handles long responses efficiently.
+  </Accordion>
+
+  <Accordion title="Manage Conversation Context">
+    Use `max_history_tokens` to limit context size and avoid exceeding model token limits. Different models have different context windows.
+  </Accordion>
+
+  <Accordion title="Validate User Input">
+    Ensure `user_query` is not empty and contains meaningful content before sending requests. This avoids unnecessary API calls.
+  </Accordion>
+
+  <Accordion title="Choose Appropriate Models">
+    Select models based on your needs:
+    - Free models for testing and development
+    - GPT-4o for high-quality claim normalization
+    - Claude for nuanced reasoning
+    - Gemini for multimodal tasks (future support)
+  </Accordion>
+</AccordionGroup>
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Chat Completions" icon="comment-dots" href="/api/chat-completions">
+    OpenAI-compatible completions with advanced features
+  </Card>
+  <Card title="Models" icon="list" href="/api/models">
+    List all available models and providers
+  </Card>
+</CardGroup>

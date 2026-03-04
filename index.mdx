@@ -1,97 +1,271 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "CheckThat AI Documentation"
+description: "Transform noisy social media posts into concise, fact-checkable claims using AI-powered iterative refinement"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#1a1d27] via-[#0f1117] to-[#1a1d27] dark:bg-gradient-to-br dark:from-[#1a1d27] dark:via-[#0f1117] dark:to-[#1a1d27] py-20 lg:py-24">
+  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+  
+  <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
+    <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+          Transform Claims with AI-Powered Fact-Checking
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-300 dark:text-gray-300 mb-8 max-w-2xl">
+          CheckThat AI converts noisy social media posts into precise, verifiable claims using advanced language models and iterative refinement with G-Eval feedback.
+        </p>
+        
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-semibold bg-[#facd32] text-gray-900 hover:bg-[#fadf8b] transition-colors duration-200 shadow-lg hover:shadow-xl"
+          >
+            Get Started
+            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          <a
+            href="/api/overview"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-semibold border-2 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:border-[#facd32] transition-colors duration-200"
+          >
+            API Reference
+          </a>
+        </div>
 
-Get your documentation site up and running in minutes.
+        <div className="mt-10 flex flex-wrap gap-6 text-sm text-gray-400 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#facd32]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>8+ AI Models</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#facd32]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>G-Eval Quality Assessment</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#facd32]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>Real-time WebSocket</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <div className="absolute inset-0 bg-[#facd32]/20 blur-3xl rounded-full"></div>
+          <div className="relative bg-[#1a1d27] dark:bg-[#1a1d27] border border-[#27272a] dark:border-[#27272a] rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="space-y-3 text-sm font-mono">
+              <div className="text-gray-400 dark:text-gray-400"># Input claim</div>
+              <div className="text-gray-100 dark:text-gray-100">"The government is hiding alien technology!"</div>
+              <div className="text-gray-400 dark:text-gray-400 mt-4"># Normalized output</div>
+              <div className="text-[#facd32]">"Government transparency concerns raised regarding alleged undisclosed technology programs."</div>
+              <div className="text-gray-400 dark:text-gray-400 mt-4"># Quality score</div>
+              <div className="text-green-400">METEOR: 0.847 | G-Eval: 0.89</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-3">
+    Quick start
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get CheckThat AI up and running in minutes
+  </p>
 
-## Make it yours
+  <Steps>
+    <Step title="Install dependencies">
+      Clone the repository and install required packages for both frontend and backend.
+      
+      ```bash
+      git clone https://github.com/Nikhil-Kadapala/checkthat.git
+      cd checkthat
+      ./setup-project.sh
+      ```
+    </Step>
+    
+    <Step title="Configure API keys">
+      Set up your AI model API keys as environment variables.
+      
+      ```bash
+      export OPENAI_API_KEY="your-openai-key"
+      export ANTHROPIC_API_KEY="your-anthropic-key"
+      export GEMINI_API_KEY="your-gemini-key"
+      ```
+      
+      <Note>You only need API keys for the models you plan to use. Llama 3.3 via Together.ai works without authentication.</Note>
+    </Step>
+    
+    <Step title="Start the application">
+      Launch both the FastAPI backend and React frontend.
+      
+      ```bash
+      ./run-project.sh
+      ```
+      
+      The web interface will be available at `http://localhost:5173` and the API at `http://localhost:8000`.
+    </Step>
+    
+    <Step title="Normalize your first claim">
+      Use the chat interface or make a direct API call to normalize a claim.
+      
+      ```bash
+      curl -X POST "http://localhost:8000/chat" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "user_query": "Climate change is a hoax invented by scientists",
+          "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        }'
+      ```
+      
+      <Accordion title="Example response">
+        ```json
+        {
+          "normalized_claim": "Scientific consensus on climate change contested by skeptics",
+          "confidence_score": 0.85,
+          "model_used": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        }
+        ```
+      </Accordion>
+    </Step>
+  </Steps>
+</div>
 
-Design a docs site that looks great and empowers your users.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-3">
+    Explore by topic
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Learn about CheckThat AI's capabilities and features
+  </p>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
+  <CardGroup cols={2}>
     <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      title="Claim normalization"
+      icon="text"
+      href="/concepts/claim-normalization"
+    >
+      Understand how noisy social media posts are transformed into fact-checkable statements
+    </Card>
+    <Card
+      title="Refinement pipeline"
+      icon="repeat"
+      href="/concepts/refinement-pipeline"
+    >
+      Learn about iterative claim improvement with Self-Refine and Cross-Refine algorithms
+    </Card>
+    <Card
+      title="Supported models"
+      icon="brain"
+      href="/concepts/supported-models"
+    >
+      Explore the 8+ AI models available including GPT-4, Claude, Gemini, Llama, and Grok
+    </Card>
+    <Card
+      title="G-Eval metrics"
+      icon="chart-line"
+      href="/research/g-eval"
+    >
+      Deep dive into quality assessment using DeepEval's G-Eval framework
+    </Card>
+  </CardGroup>
+</div>
 
-## Create beautiful pages
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-3">
+    Features and capabilities
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Everything you need for claim normalization and fact-checking
+  </p>
 
-Everything you need to create world-class documentation.
+  <CardGroup cols={3}>
+    <Card
+      title="Web interface"
+      icon="browser"
+      href="/webapp/chat-interface"
+    >
+      Interactive chat interface for real-time claim normalization
+    </Card>
+    <Card
+      title="Batch processing"
+      icon="layer-group"
+      href="/webapp/batch-evaluation"
+    >
+      Process multiple claims simultaneously with progress tracking
+    </Card>
+    <Card
+      title="API access"
+      icon="code"
+      href="/api/overview"
+    >
+      RESTful API with WebSocket support for streaming responses
+    </Card>
+    <Card
+      title="Multiple strategies"
+      icon="lightbulb"
+      href="/guides/prompting-strategies"
+    >
+      Zero-shot, few-shot, and chain-of-thought prompting techniques
+    </Card>
+    <Card
+      title="Quality metrics"
+      icon="star"
+      href="/concepts/evaluation-metrics"
+    >
+      METEOR scoring and G-Eval assessment for claim quality
+    </Card>
+    <Card
+      title="CLEF CheckThat"
+      icon="flask"
+      href="/research/clef-checkthat"
+    >
+      Built for CLEF-CheckThat! Lab Task 2 competition
+    </Card>
+  </CardGroup>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#facd32] to-[#fadf8b] dark:from-[#facd32] dark:to-[#fadf8b] p-8 sm:p-12">
+    <div className="relative z-10">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+        Ready to start fact-checking?
+      </h2>
+      <p className="text-base sm:text-lg text-gray-800 mb-6 max-w-2xl">
+        Get started with CheckThat AI today and transform how you verify claims from social media.
+      </p>
+      <a
+        href="/quickstart"
+        className="inline-flex items-center px-6 py-3 rounded-lg font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200 shadow-lg"
+      >
+        View quickstart guide
+        <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+    <div className="absolute right-0 top-0 -mt-4 -mr-4 opacity-20">
+      <svg className="w-64 h-64" viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="2" />
+        <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="2" />
+        <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    </div>
+  </div>
+</div>

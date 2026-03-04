@@ -1,0 +1,545 @@
+---
+title: 'Prompting Strategies'
+description: 'Learn how to use different prompting strategies for claim normalization'
+icon: 'wand-magic-sparkles'
+---
+
+CheckThat AI supports multiple prompting strategies to optimize claim extraction and normalization. Choose the right strategy based on your use case and desired output quality.
+
+## Available Prompting Strategies
+
+CheckThat AI implements three core prompting approaches:
+
+<CardGroup cols={3}>
+  <Card title="Zero-Shot" icon="bolt">
+    Direct claim extraction without examples
+  </Card>
+  <Card title="Few-Shot" icon="list">
+    Learning from provided examples
+  </Card>
+  <Card title="Chain-of-Thought" icon="link">
+    Step-by-step reasoning process
+  </Card>
+</CardGroup>
+
+## Zero-Shot Prompting
+
+Zero-shot prompting provides direct instructions without examples. Best for simple, straightforward claims.
+
+### How It Works
+
+The system uses the base instruction prompt defined in `prompts.py:55`:
+
+```python
+instruction = """Identify the decontextualized, stand-alone, and verifiable central claim in the given post: """
+```
+
+The system prompt guides the model through a multi-step process:
+
+1. **Sentence Splitting**: Break down the post into individual sentences
+2. **Selection**: Identify verifiable information
+3. **Disambiguation**: Resolve referential and structural ambiguity
+4. **Decomposition**: Extract self-contained propositions
+
+### Example API Call
+
+<CodeGroup>
+
+```python Python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": "Lieutenant Retired General Asif Mumtaz appointed as Chairman Pakistan Medical Commission PMC"
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+# Output: "Pakistani government appoints former army general to head medical regulatory body."
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [
+    {
+      role: 'user',
+      content: 'Lieutenant Retired General Asif Mumtaz appointed as Chairman Pakistan Medical Commission PMC'
+    }
+  ]
+});
+
+console.log(response.choices[0].message.content);
+// Output: "Pakistani government appoints former army general to head medical regulatory body."
+```
+
+```bash cURL
+curl https://api.checkthat.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-5-2025-08-07",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Lieutenant Retired General Asif Mumtaz appointed as Chairman Pakistan Medical Commission PMC"
+      }
+    ]
+  }'
+```
+
+</CodeGroup>
+
+### When to Use Zero-Shot
+
+<CardGroup cols={2}>
+  <Card title="Best For" icon="check">
+    - Simple, clear statements
+    - News headlines
+    - Direct factual claims
+    - Quick processing needs
+  </Card>
+  <Card title="Avoid When" icon="xmark">
+    - Complex context required
+    - Ambiguous language
+    - Domain-specific jargon
+    - Subtle misinformation
+  </Card>
+</CardGroup>
+
+## Few-Shot Prompting
+
+Few-shot prompting provides examples to guide the model's behavior. The system includes pre-configured examples in `prompts.py:59-118`.
+
+### Example Structure
+
+CheckThat AI includes 5 carefully curated examples covering:
+
+- Medical/institutional claims
+- Celebrity/viral content
+- Health misinformation
+- Scientific false claims
+- COVID-19 related content
+
+### Implementation Details
+
+The few-shot prompt includes examples with clear structure:
+
+```python
+<user_query id="example-1">
+**Identify the decontextualized, stand-alone, and verifiable central claim:**
+[Original Post]
+
+Let's think step by step.
+</user_query>
+
+<assistant_response id="example-1">
+**Normalized claim:** [Extracted Claim]
+</assistant_response>
+```
+
+### Example API Call with Few-Shot
+
+<CodeGroup>
+
+```python Python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+# Construct few-shot prompt by prepending examples
+few_shot_examples = """
+Here are some examples:
+
+Example 1:
+Input: "Eating vaginal fluids makes you immune to cancer. Scientists at St. Austin University in North Carolina investigated..."
+Output: "St.Austin University North Carolina says eating vaginal fluid makes you immune to cancer"
+
+Example 2:
+Input: "Corona virus before it reaches the lungs it remains in the throat for four days..."
+Output: "Gargling water can protect against coronavirus"
+
+Now extract the claim from:
+"""
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": few_shot_examples + "Hydrate YOURSELF. Water after waking up helps activate internal organs."
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+# Output: "Drinking water at specific times can have different health benefits"
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const fewShotExamples = `
+Here are some examples:
+
+Example 1:
+Input: "Eating vaginal fluids makes you immune to cancer..."
+Output: "St.Austin University North Carolina says eating vaginal fluid makes you immune to cancer"
+
+Example 2:
+Input: "Corona virus before it reaches the lungs..."
+Output: "Gargling water can protect against coronavirus"
+
+Now extract the claim from:
+`;
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [
+    {
+      role: 'user',
+      content: fewShotExamples + 'Hydrate YOURSELF. Water after waking up helps activate internal organs.'
+    }
+  ]
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+### When to Use Few-Shot
+
+<Check>Use few-shot prompting when you need consistent output format or have domain-specific examples</Check>
+
+**Ideal scenarios:**
+- Establishing output format consistency
+- Domain-specific terminology
+- Complex extraction patterns
+- Training on edge cases
+
+## Chain-of-Thought (CoT) Reasoning
+
+Chain-of-Thought prompting adds explicit reasoning steps before the final claim. Implemented with the trigger phrase from `prompts.py:57`:
+
+```python
+chain_of_thought_trigger = "Let's think step by step."
+```
+
+### How CoT Works
+
+The enhanced few-shot CoT prompt (`prompts.py:120-215`) includes detailed reasoning:
+
+<Steps>
+  <Step title="Identify Key Elements">
+    Spot the subject, action, and context
+    ```
+    1. **Identify the actor:** "Lieutenant Retired General Asif Mumtaz."
+    2. **Find the action:** He is "appointed as Chairman."
+    3. **Clarify the institution:** "Pakistan Medical Commission (PMC)"
+    ```
+  </Step>
+  
+  <Step title="Infer Missing Context">
+    Determine implicit information
+    ```
+    4. **Infer the agent:** Such appointments are made by the Pakistani government.
+    ```
+  </Step>
+  
+  <Step title="Condense and Rephrase">
+    Create self-contained claim
+    ```
+    5. **Condense & rephrase:** Government appoints ex-army general to lead medical regulatory body.
+    ```
+  </Step>
+  
+  <Step title="Output Final Claim">
+    Present the normalized claim
+    ```
+    **Normalized claim:** Pakistani government appoints former army general to head medical regulatory body.
+    ```
+  </Step>
+</Steps>
+
+### Example API Call with CoT
+
+<CodeGroup>
+
+```python Python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": """Identify the claim in this post: 
+            
+            'A priceless clip of 1970 of Bruce Lee playing Table Tennis with his Nan-chak!!'
+            
+            Let's think step by step."""
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+# The model will show reasoning steps:
+# 1. **Spot the subject & date:** "Bruce Lee" and "1970."
+# 2. **Extract the activity:** "playing Table Tennis with his Nan-chak" (nunchucks).
+# 3. **Add clarifying detail:** Bruce Lee is now deceased ("late actor and martial artist").
+# 4. **Formulate succinctly:** "Late actor and martial artist Bruce Lee playing table tennis with a set of nunchucks."
+#
+# **Normalized claim:** Late actor and martial artist Bruce Lee playing table tennis with a set of nunchucks.
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [
+    {
+      role: 'user',
+      content: `Identify the claim in this post:
+      
+      'A priceless clip of 1970 of Bruce Lee playing Table Tennis with his Nan-chak!!'
+      
+      Let's think step by step.`
+    }
+  ]
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+### When to Use Chain-of-Thought
+
+<Warning>CoT increases token usage and latency but significantly improves accuracy for complex claims</Warning>
+
+**Best for:**
+- Complex ambiguous statements
+- Multi-part claims requiring decomposition
+- Cases needing explicit context resolution
+- High-stakes fact-checking scenarios
+
+## Strategy Comparison
+
+<Tabs>
+  <Tab title="Performance">
+    | Strategy | Speed | Accuracy | Token Usage | Cost |
+    |----------|-------|----------|----------------|------|
+    | Zero-Shot | Fast | Good | Low | $ |
+    | Few-Shot | Medium | Better | Medium | $$ |
+    | Chain-of-Thought | Slow | Best | High | $$$ |
+  </Tab>
+  
+  <Tab title="Use Cases">
+    **Zero-Shot:**
+    - Batch processing thousands of claims
+    - Clear, unambiguous statements
+    - News headline extraction
+    - Real-time fact-checking
+
+    **Few-Shot:**
+    - Consistent formatting requirements
+    - Domain-specific extraction (medical, legal)
+    - Custom claim patterns
+    - Quality over speed
+
+    **Chain-of-Thought:**
+    - High-value fact-checks
+    - Legally sensitive claims
+    - Research-grade extraction
+    - Transparent reasoning required
+  </Tab>
+  
+  <Tab title="Code Examples">
+    ```python
+    # Quick comparison
+    from checkthat import CheckThat
+    
+    client = CheckThat(api_key="your-api-key")
+    post = "Your social media post here"
+    
+    # Zero-shot (fastest)
+    zero_shot = client.chat.completions.create(
+        model="gpt-5-nano-2025-08-07",  # Faster model
+        messages=[{"role": "user", "content": post}]
+    )
+    
+    # Few-shot (balanced)
+    few_shot = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{
+            "role": "user", 
+            "content": few_shot_examples + post
+        }]
+    )
+    
+    # Chain-of-Thought (most accurate)
+    cot = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{
+            "role": "user",
+            "content": f"{post}\n\nLet's think step by step."
+        }]
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## System Prompt Details
+
+The core system prompt (ClaimNorm) from `prompts.py:3-53` includes:
+
+<Accordion title="View Full System Prompt Structure">
+  
+  **Identity:**
+  - ClaimNorm AI assistant
+  - Expert in claim detection, extraction, and normalization
+  
+  **4-Step Process:**
+  
+  1. **Sentence Splitting and Context Creation**
+     - Split post into sentences
+     - Create context using 2 preceding and 2 following sentences
+  
+  2. **Selection**
+     - Determine if sentence contains verifiable information
+     - Rewrite to retain only verifiable parts
+  
+  3. **Disambiguation**
+     - Resolve referential ambiguity (unclear references)
+     - Resolve structural ambiguity (multiple interpretations)
+     - Discard if ambiguity cannot be resolved
+  
+  4. **Decomposition**
+     - Identify specific, verifiable propositions
+     - Ensure decontextualization (self-contained)
+     - Create simplest discrete units of information
+  
+  **Fallback:**
+  - If no verifiable claims found, return extractive summary
+  - Maximum 25 words
+  - Preserve named entities
+  - Return as news headline style
+
+</Accordion>
+
+## Advanced Techniques
+
+### Combining Strategies
+
+You can combine strategies for optimal results:
+
+```python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+# First pass: Few-shot for structure
+first_pass = client.chat.completions.create(
+    model="gpt-5-nano-2025-08-07",
+    messages=[{"role": "user", "content": few_shot_examples + original_post}]
+)
+
+extracted_claim = first_pass.choices[0].message.content
+
+# Second pass: CoT for refinement
+refined = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": f"""Verify and refine this claim:
+            
+            Original: {original_post}
+            Extracted: {extracted_claim}
+            
+            Is this claim accurate and self-contained? Let's think step by step."""
+        }
+    ]
+)
+```
+
+### Custom System Prompts
+
+Override the default system prompt for specialized use cases:
+
+```python
+custom_system_prompt = """
+You are a medical fact-checker specialized in COVID-19 claims.
+Focus on:
+- Treatment claims
+- Vaccine information
+- Transmission mechanisms
+- Official health guidance
+
+Always preserve source attribution when present.
+"""
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {"role": "system", "content": custom_system_prompt},
+        {"role": "user", "content": "Gargling with salt water kills coronavirus"}
+    ]
+)
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Simple" icon="seedling">
+    Begin with zero-shot, upgrade to few-shot if needed
+  </Card>
+  <Card title="Test Examples" icon="flask">
+    Validate few-shot examples match your domain
+  </Card>
+  <Card title="Monitor Costs" icon="dollar-sign">
+    CoT uses 2-3x more tokens than zero-shot
+  </Card>
+  <Card title="Measure Quality" icon="chart-line">
+    Use G-Eval metrics to compare strategies
+  </Card>
+</CardGroup>
+
+<Tip>
+  For production systems, consider implementing a hybrid approach: use zero-shot for initial filtering, then apply CoT to high-priority or ambiguous claims.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Self-Refine" icon="arrows-rotate" href="/guides/self-refine">
+    Iteratively improve claim quality
+  </Card>
+  <Card title="Custom Evaluation" icon="star" href="/guides/custom-evaluation">
+    Define your own quality metrics
+  </Card>
+</CardGroup>

@@ -1,0 +1,329 @@
+---
+title: "Gemini Models"
+description: "Use Google's Gemini models with CheckThat API"
+---
+
+## Overview
+
+CheckThat integrates with Google's Gemini models, providing access to multimodal AI capabilities with strong performance on reasoning, analysis, and generation tasks. Gemini models are designed for versatility and efficiency.
+
+## Available Models
+
+The following Gemini models are available through CheckThat:
+
+<ParamField path="gemini-2.5-pro" type="string">
+  **Gemini 2.5 Pro** - Most capable model with superior performance on complex reasoning tasks
+</ParamField>
+
+<ParamField path="gemini-2.5-flash" type="string">
+  **Gemini 2.5 Flash** - Optimized for speed and efficiency while maintaining high quality
+</ParamField>
+
+## Configuration
+
+### API Key Setup
+
+<ParamField path="api_key" type="string" required>
+  Your Google AI API key. Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The model identifier from the available models list above.
+</ParamField>
+
+### Request Parameters
+
+<ParamField path="system_instruction" type="string">
+  System instruction that sets the model's behavior and context.
+</ParamField>
+
+<ParamField path="contents" type="array" required>
+  Array of content parts. Can include text and other modalities.
+  ```json
+  [
+    {"role": "user", "parts": [{"text": "Hello!"}]},
+    {"role": "model", "parts": [{"text": "Hi there!"}]}
+  ]
+  ```
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Controls randomness in responses. Range: 0.0 to 2.0.
+</ParamField>
+
+<ParamField path="response_mime_type" type="string">
+  Expected MIME type of response (e.g., `application/json` for structured outputs).
+</ParamField>
+
+<ParamField path="response_schema" type="object">
+  JSON schema for structured output generation.
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Enable streaming responses for real-time output.
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Completion
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gemini-2.5-pro",
+    "provider": "gemini",
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Explain machine learning in simple terms."}
+    ],
+    "system_prompt": "You are a helpful AI assistant."
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Streaming Response
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gemini-2.5-flash",
+    "provider": "gemini",
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Write a creative story about space exploration."}
+    ],
+    "stream": True
+}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as response:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode('utf-8'))
+```
+
+### Structured Output with JSON Schema
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+schema = {
+    "type": "object",
+    "properties": {
+        "topic": {"type": "string"},
+        "key_points": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "complexity": {
+            "type": "string",
+            "enum": ["simple", "moderate", "advanced"]
+        }
+    },
+    "required": ["topic", "key_points"]
+}
+
+payload = {
+    "model": "gemini-2.5-pro",
+    "provider": "gemini",
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Summarize the key concepts of quantum computing."}
+    ],
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "topic_summary",
+            "schema": schema
+        }
+    }
+}
+
+response = requests.post(url, json=payload, headers=headers)
+result = response.json()
+print(result)
+```
+
+### Multi-turn Conversation
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gemini-2.5-pro",
+    "provider": "gemini",
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "What is photosynthesis?"},
+        {"role": "assistant", "content": "Photosynthesis is the process by which plants convert light energy into chemical energy."},
+        {"role": "user", "content": "What are the main steps involved?"}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+## Features and Capabilities
+
+### Structured Output Support
+
+Gemini models have excellent support for structured outputs using JSON schemas (`gemini.py:81-146`):
+
+**Full JSON Schema Support:**
+```python
+response = client.models.generate_content(
+    model=model,
+    contents=contents,
+    config=types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        response_mime_type='application/json',
+        response_schema=schema
+    )
+)
+```
+
+**Supported Models:**
+- gemini-2.5-pro
+- gemini-2.5-flash
+- gemini-1.5-pro (legacy)
+- gemini-1.5-flash (legacy)
+
+### Conversation History Management
+
+CheckThat automatically formats conversation history for Gemini's API (`gemini.py:38-43`):
+- Converts messages to Gemini's `Part` format
+- Maintains system instructions separately
+- Handles multi-turn conversations seamlessly
+
+### Streaming Support
+
+Real-time streaming with native Gemini streaming API (`gemini.py:57-79`):
+```python
+stream = client.models.generate_content_stream(
+    model=model,
+    contents=contents,
+    config=types.GenerateContentConfig(
+        system_instruction=system_instruction
+    )
+)
+for chunk in stream:
+    if hasattr(chunk, 'text') and chunk.text:
+        yield chunk.text
+```
+
+### OpenAI-Compatible Response Format
+
+CheckThat transforms Gemini responses to OpenAI-compatible format (`gemini.py:148-244`):
+- Extracts content from candidates
+- Maps finish reasons (STOP, MAX_TOKENS, SAFETY, etc.)
+- Includes usage metadata (prompt_token_count, candidates_token_count)
+- Preserves safety ratings for content filtering
+
+## Implementation Details
+
+CheckThat's Gemini integration (`gemini.py:19-244`) provides:
+
+- **Native Google GenAI client**: Uses official `google.genai` SDK
+- **Full structured output support**: JSON schema with response validation
+- **Safety ratings**: Includes content safety information in responses
+- **Response transformation**: Converts to OpenAI-compatible format
+
+### Structured Response Object
+
+For JSON schema responses, CheckThat returns a `StructuredResponse` object:
+```python
+class StructuredResponse:
+    def __init__(self, content: str, parsed: Any):
+        self.content = content  # Raw JSON string
+        self.parsed = parsed    # Parsed Python object
+```
+
+### Safety Ratings
+
+Gemini responses include safety ratings for content filtering:
+```python
+"gemini_safety_ratings": [
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "probability": "NEGLIGIBLE"
+    }
+]
+```
+
+## Rate Limits and Pricing
+
+Rate limits and pricing are determined by your Google AI API tier. CheckThat does not impose additional limits.
+
+Refer to [Google AI pricing](https://ai.google.dev/pricing) for current rates:
+- **Gemini 2.5 Pro**: Premium pricing for complex tasks
+- **Gemini 2.5 Flash**: Optimized pricing for high-volume use
+
+### Free Tier
+
+Google AI offers a generous free tier:
+- 15 requests per minute
+- 1 million tokens per minute
+- 1,500 requests per day
+
+## Error Handling
+
+```python
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+    
+    # Check for safety filters
+    if 'gemini_safety_ratings' in result:
+        for rating in result['gemini_safety_ratings']:
+            if rating['probability'] not in ['NEGLIGIBLE', 'LOW']:
+                print(f"Safety warning: {rating['category']}")
+except requests.exceptions.HTTPError as e:
+    print(f"API Error: {e}")
+    print(f"Response: {e.response.text}")
+except ValueError as e:
+    print(f"Invalid API key or configuration: {e}")
+```
+
+Common error codes:
+- **400**: Invalid request or API key required
+- **429**: Rate limit exceeded
+- **500**: Gemini service error
+
+## Best Practices
+
+1. **Choose the right model**: Use Flash for speed, Pro for complex reasoning
+2. **Leverage JSON schema**: Take advantage of native structured output support
+3. **Monitor safety ratings**: Check content safety in responses
+4. **Use streaming**: Enable streaming for better user experience
+5. **Handle API key errors**: Gemini requires API key; validate before requests
+6. **Optimize for free tier**: Stay within rate limits for cost-effective use
+7. **System instructions**: Use clear system instructions for consistent behavior

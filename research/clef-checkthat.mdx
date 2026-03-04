@@ -1,0 +1,158 @@
+---
+title: "CLEF-CheckThat! Lab"
+description: "Understanding the CLEF-CheckThat! Lab competition and Task 2 (2025) for claim normalization"
+---
+
+## Overview
+
+CheckThat AI is built for participation in the **CLEF-CheckThat! Lab's Task 2 (2025)**, a competitive research challenge focused on advancing automatic fact-checking and claim verification technologies.
+
+The CLEF (Conference and Labs of the Evaluation Forum) CheckThat! Lab is an annual evaluation campaign that brings together researchers, practitioners, and developers to tackle pressing challenges in computational fact-checking.
+
+## What is CLEF-CheckThat! Lab?
+
+CLEF-CheckThat! is an international shared task organized as part of the CLEF conference series. The lab focuses on developing automated methods for:
+
+- **Check-worthiness detection**: Identifying claims that merit fact-checking
+- **Claim detection and extraction**: Finding factual assertions in text
+- **Claim matching**: Identifying previously fact-checked claims
+- **Claim verification**: Assessing the veracity of claims using evidence
+
+### Research Goals
+
+The lab addresses critical challenges in the fight against misinformation:
+
+1. **Scale**: The volume of information online far exceeds human fact-checking capacity
+2. **Speed**: False information spreads rapidly and requires quick responses
+3. **Complexity**: Claims are often embedded in noisy, unstructured social media content
+4. **Context**: Understanding requires disambiguation and background knowledge
+
+## Task 2 (2025): Claim Normalization
+
+### Task Description
+
+**Given**: A noisy, unstructured social media post (text extracted from platforms like Twitter, Facebook, or Instagram)
+
+**Goal**: Transform the post into a concise, normalized claim that is:
+- **Self-contained**: Understandable without external context
+- **Verifiable**: Can be fact-checked against reliable sources
+- **Concise**: Typically under 25 words
+- **Faithful**: Accurately represents the original assertion without hallucination
+
+### Why This Matters
+
+Social media posts present unique challenges:
+
+<Info>
+  **Challenge Example**: A post might read: "They're hiding the truth about what happened last week! Wake up people!!!"
+  
+  This contains vague references ("They", "the truth", "what happened"), emotional language, and lacks specificity—making direct fact-checking impossible without normalization.
+</Info>
+
+### Competition Objectives
+
+Participants develop systems that can:
+
+1. **Extract core claims** from verbose or fragmented text
+2. **Resolve ambiguity** in references and context
+3. **Remove noise** like hashtags, URLs, and emotional language
+4. **Preserve meaning** while achieving conciseness
+5. **Maintain factual accuracy** without introducing new information
+
+## Dataset Information
+
+### Data Format
+
+The CLEF-CheckThat! Task 2 dataset contains:
+
+- **Development Set** (`dev.csv`): Labeled examples for model training and validation
+- **Test Set** (`test.csv`): Unlabeled posts for final evaluation
+- **JSONL Format**: Alternative format with structured metadata
+
+### Data Characteristics
+
+<Note>
+  **Source Material**: Posts are collected from multiple social media platforms and represent diverse topics including:
+  - Health and medicine claims
+  - Political statements
+  - Scientific assertions
+  - News and current events
+  - Viral misinformation
+</Note>
+
+### Evaluation Metrics
+
+Systems are evaluated using:
+
+- **METEOR Score**: Primary metric measuring semantic similarity and quality (see [METEOR Scoring](/research/meteor-scoring))
+- **Human Evaluation**: Manual assessment of claim quality by expert judges
+- **Quality Criteria**: Verifiability, check-worthiness, clarity, and faithfulness
+
+## Research Context
+
+### Related Work
+
+Claim normalization builds on several research areas:
+
+1. **Information Extraction**: Identifying structured information from unstructured text
+2. **Text Simplification**: Making complex text more accessible
+3. **Summarization**: Condensing information while preserving key content
+4. **Coreference Resolution**: Identifying what pronouns and references point to
+5. **Fact-Checking**: Verifying the truthfulness of claims
+
+### Academic Impact
+
+The CLEF-CheckThat! Lab has produced significant research contributions:
+
+- Published in proceedings of CLEF conferences
+- Cited in academic papers on fact-checking and misinformation
+- Used as benchmarks for claim detection and verification systems
+- Influenced real-world fact-checking platforms and tools
+
+## CheckThat AI's Approach
+
+Our system leverages advanced techniques:
+
+### Model Architecture
+
+- **Multi-Model Support**: GPT-4, Claude, Gemini, Llama, and Grok
+- **Prompting Strategies**: Zero-shot, few-shot, and chain-of-thought reasoning
+- **Refinement Loop**: Iterative improvement using [G-Eval](/research/g-eval) feedback
+- **Quality Assessment**: Automated evaluation with [DeepEval integration](/research/deepeval-integration)
+
+### Processing Pipeline
+
+See our complete [fact-checking pipeline](/research/fact-checking) for details on how we:
+
+1. Detect claims in noisy posts
+2. Extract verifiable assertions
+3. Normalize and disambiguate
+4. Evaluate and refine outputs
+5. Score quality using METEOR and G-Eval
+
+## References
+
+### CLEF-CheckThat! Resources
+
+- **Official Website**: [CLEF-CheckThat! Lab Task 2 (2025)](https://checkthat.gitlab.io/clef2025/task2/)
+- **CLEF Conference**: Annual conference on experimental IR and NLP evaluation
+- **Previous Tasks**: Archives of past competitions and datasets
+
+### Academic Citations
+
+If you use CheckThat AI or build upon this work, please cite:
+
+```bibtex
+@misc{checkthat-ai-clef2025,
+  title={Claim Extraction and Normalization for CLEF-CheckThat! Lab Task 2},
+  author={Nikhil Kadapala},
+  year={2025},
+  howpublished={\url{https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2}}
+}
+```
+
+### Further Reading
+
+- [Claim Detection Techniques](/research/claim-detection)
+- [Fact-Checking Methodology](/research/fact-checking)
+- [Evaluation Metrics](/research/g-eval)

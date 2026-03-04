@@ -1,0 +1,201 @@
+---
+title: Introduction to CheckThat AI
+description: Learn about CheckThat AI's claim normalization platform powered by advanced AI models for fact-checking and analysis
+---
+
+## What is CheckThat AI?
+
+CheckThat AI is an advanced AI-powered claim normalization platform developed for the CLEF-CheckThat! Lab's Task 2 (2025). It transforms complex, noisy social media posts into clear, normalized statements suitable for fact-checking and analysis.
+
+The platform leverages state-of-the-art language models from OpenAI, Anthropic, Google, xAI, and Meta to process unstructured claims through sophisticated normalization pipelines.
+
+<Note>
+  CheckThat AI is part of the CLEF-CheckThat! Lab, a collaborative effort to advance automated fact-checking technologies.
+</Note>
+
+## Key features
+
+CheckThat AI provides a comprehensive suite of tools for claim processing:
+
+### Interactive web application
+
+- **Real-time chat interface**: Normalize claims instantly with streaming AI responses
+- **Batch evaluation**: Upload datasets for comprehensive evaluation with multiple models
+- **Multi-model support**: Choose from 8+ AI models including GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, Grok 4, and Llama 3.3
+- **Real-time progress tracking**: WebSocket-based live evaluation updates
+- **Advanced refinement**: Self-Refine and Cross-Refine algorithms for iterative improvement
+- **Automatic evaluation**: METEOR scoring with detailed quality metrics
+- **Modern UI**: Responsive design with dark theme support
+
+### RESTful API
+
+- **OpenAI-compatible endpoints**: Drop-in replacement for OpenAI's API with claim normalization capabilities
+- **WebSocket support**: Real-time evaluation progress updates
+- **Streaming responses**: Efficient real-time text generation
+- **CORS configured**: Ready for cross-origin requests from web applications
+- **Multiple AI providers**: Unified interface for 8+ models from 5 different providers
+
+### Advanced normalization strategies
+
+- **Zero-shot**: Direct claim normalization without examples
+- **Few-shot**: Example-based learning for improved accuracy
+- **Chain-of-Thought (CoT)**: Step-by-step reasoning for complex claims
+- **Self-Refine**: Iterative improvement through self-evaluation
+- **Cross-Refine**: Multi-model collaborative refinement
+
+## How it works
+
+CheckThat AI follows a sophisticated pipeline to normalize social media claims:
+
+<Steps>
+  <Step title="Input processing">
+    The system receives noisy, unstructured social media posts containing informal language, slang, and complex sentence structures.
+  </Step>
+  
+  <Step title="Model selection">
+    You choose from multiple AI models based on your requirements:
+    - **OpenAI**: GPT-5, GPT-5 nano, o3, o4-mini
+    - **Anthropic**: Claude Sonnet 4, Claude Opus 4.1
+    - **Google**: Gemini 2.5 Pro, Gemini 2.5 Flash
+    - **xAI**: Grok 3, Grok 4, Grok 3 Mini
+    - **Together AI**: Llama 3.3 70B, DeepSeek R1 Distill Llama 70B
+  </Step>
+  
+  <Step title="Normalization">
+    The selected prompting strategy processes the claim:
+    - Removes informal language and noise
+    - Extracts core factual assertions
+    - Structures claims for verification
+    - Maintains semantic meaning
+  </Step>
+  
+  <Step title="Evaluation">
+    Automated METEOR scoring assesses normalization quality against reference standards.
+  </Step>
+  
+  <Step title="Output">
+    The system returns clean, normalized claims ready for fact-checking workflows.
+  </Step>
+</Steps>
+
+## Use cases
+
+CheckThat AI serves multiple use cases in the fact-checking ecosystem:
+
+### Social media monitoring
+
+Process large volumes of social media posts to identify and normalize claims for fact-checkers. The batch evaluation feature enables processing thousands of claims efficiently.
+
+### News verification
+
+Normalize claims from news articles and blog posts into verifiable statements. The Chain-of-Thought strategy excels at breaking down complex arguments.
+
+### Research and analysis
+
+Analyze claim patterns across datasets with consistent normalization. The API enables integration into research pipelines and data science workflows.
+
+### Content moderation
+
+Identify and normalize potentially misleading claims in user-generated content. The real-time API enables immediate claim processing.
+
+## Architecture overview
+
+CheckThat AI is built with modern technologies for performance and scalability:
+
+### Frontend architecture
+
+- **Framework**: React 19 with TypeScript for type safety
+- **Build tool**: Vite for fast development and optimized production builds
+- **Styling**: Tailwind CSS 4 for responsive, modern UI design
+- **UI components**: Radix UI primitives with custom styling
+- **State management**: React Context API for global state
+- **Routing**: React Router v7 for client-side navigation
+- **Real-time updates**: WebSocket connections for live progress tracking
+
+### Backend architecture
+
+- **Framework**: FastAPI with async/await for high-performance API endpoints
+- **Runtime**: Python 3.8+ with uvicorn ASGI server
+- **AI integration**: Unified interface for multiple AI providers
+- **Validation**: Pydantic for request/response validation
+- **Evaluation**: NLTK with METEOR scoring for quality assessment
+- **Streaming**: Server-Sent Events (SSE) for real-time responses
+- **WebSocket**: Real-time bidirectional communication for batch processing
+
+### AI model integration
+
+The platform integrates with five major AI providers through a unified router:
+
+```python
+# Simplified example from api/_utils/LLMRouter.py
+class LLMRouter:
+    def __init__(self, model: str, api_key: Optional[str] = None):
+        self.model = model
+        # Automatically detect provider from model name
+        if model in OPENAI_MODELS:
+            self.api_provider = 'OPENAI'
+        elif model in ANTHROPIC_MODELS:
+            self.api_provider = 'ANTHROPIC'
+        # ... additional providers
+```
+
+### Deployment architecture
+
+- **Frontend**: GitHub Pages for static site hosting
+- **Backend**: Cloud hosting (Render) with automatic scaling
+- **API keys**: Environment variable configuration for secure credential management
+- **CORS**: Configured for cross-origin access from web applications
+
+<Note>
+  The backend API is stateless and horizontally scalable, making it suitable for high-traffic production deployments.
+</Note>
+
+## Example transformation
+
+Here's how CheckThat AI normalizes a typical social media claim:
+
+**Input** (noisy, informal):
+```text
+The government is hiding something from us!
+```
+
+**Output** (normalized, verifiable):
+```text
+Government transparency concerns have been raised by citizens regarding public information access.
+```
+
+**METEOR Score**: 0.847 (quality metric)
+
+The normalized claim:
+- Removes emotional language ("hiding something")
+- Makes the assertion specific and verifiable
+- Maintains the core semantic meaning
+- Formats for fact-checking workflows
+
+## Next steps
+
+Ready to get started with CheckThat AI? Here's what to do next:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get CheckThat AI running locally in under 5 minutes
+  </Card>
+  
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation guide for development and production
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Explore the complete API documentation
+  </Card>
+  
+  <Card title="Try Live Demo" icon="globe" href="https://nikhil-kadapala.github.io/clef2025-checkthat-lab-task2/">
+    Test the platform without installation
+  </Card>
+</CardGroup>
+
+## Open source
+
+CheckThat AI is open source and welcomes contributions. The project is licensed under the MIT License, allowing you to use, modify, and distribute the software freely.
+
+Visit the [GitHub repository](https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2) to explore the source code, report issues, or contribute improvements.

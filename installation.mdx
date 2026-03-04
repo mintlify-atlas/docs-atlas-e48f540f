@@ -1,0 +1,670 @@
+---
+title: Installation Guide
+description: Detailed installation instructions for CheckThat AI including prerequisites, manual setup, configuration, and troubleshooting
+---
+
+## Overview
+
+This guide provides comprehensive installation instructions for CheckThat AI. You can choose between automated setup using scripts or manual installation for more control.
+
+<Note>
+  For a faster setup, see the [Quickstart Guide](/quickstart) which uses automated scripts.
+</Note>
+
+## Prerequisites
+
+Before installing CheckThat AI, ensure your system meets these requirements:
+
+### System requirements
+
+- **Operating System**: Linux, macOS, or Windows (with WSL recommended)
+- **Node.js**: Version 18 or higher
+- **Python**: Version 3.8 or higher
+- **Git**: For cloning the repository
+- **npm**: Comes with Node.js
+- **pip**: Python package installer (comes with Python)
+
+### Verify installations
+
+Check that you have the required tools installed:
+
+```bash
+# Check Node.js version
+node --version  # Should be v18 or higher
+
+# Check npm version
+npm --version
+
+# Check Python version
+python --version  # Should be 3.8 or higher
+# On some systems, use python3
+python3 --version
+
+# Check pip version
+pip --version
+# On some systems, use pip3
+pip3 --version
+
+# Check git
+git --version
+```
+
+### API keys
+
+Obtain API keys for the AI providers you plan to use:
+
+<AccordionGroup>
+  <Accordion title="OpenAI API Key" icon="key">
+    1. Visit [OpenAI Platform](https://platform.openai.com/)
+    2. Sign up or log in to your account
+    3. Navigate to [API Keys](https://platform.openai.com/api-keys)
+    4. Click "Create new secret key"
+    5. Copy and save your key securely
+    
+    **Supported models**: GPT-5, GPT-5 nano, o3, o4-mini
+  </Accordion>
+  
+  <Accordion title="Anthropic API Key" icon="key">
+    1. Visit [Anthropic Console](https://console.anthropic.com/)
+    2. Sign up or log in
+    3. Navigate to API Keys section
+    4. Generate a new API key
+    5. Save your key securely
+    
+    **Supported models**: Claude Sonnet 4, Claude Opus 4.1
+  </Accordion>
+  
+  <Accordion title="Google AI API Key" icon="key">
+    1. Visit [Google AI Studio](https://aistudio.google.com/)
+    2. Sign in with your Google account
+    3. Click "Get API Key"
+    4. Create a new API key or use an existing one
+    5. Save your key securely
+    
+    **Supported models**: Gemini 2.5 Pro, Gemini 2.5 Flash
+  </Accordion>
+  
+  <Accordion title="xAI API Key" icon="key">
+    1. Visit [xAI Console](https://x.ai/)
+    2. Sign up or log in
+    3. Navigate to API section
+    4. Generate your API key
+    5. Save your key securely
+    
+    **Supported models**: Grok 3, Grok 4, Grok 3 Mini
+  </Accordion>
+  
+  <Accordion title="Together AI (Free Models)" icon="stars">
+    Together AI offers free models that don't require an API key for local development:
+    
+    - Llama 3.3 70B (free, no key required)
+    - DeepSeek R1 Distill Llama 70B (free, no key required)
+    
+    These are great options for testing and development without API costs.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Never commit API keys to version control. Always use environment variables or secure configuration files.
+</Warning>
+
+## Installation methods
+
+### Option 1: Automated setup (recommended)
+
+The automated setup is the fastest way to get started:
+
+<Steps>
+  <Step title="Clone repository">
+    ```bash
+    git clone https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2.git
+    cd clef2025-checkthat-lab-task2
+    ```
+  </Step>
+  
+  <Step title="Make scripts executable">
+    **Linux/macOS:**
+    ```bash
+    chmod +x setup-project.sh run-project.sh
+    ```
+    
+    **Windows:**
+    Use Git Bash or WSL to run the scripts:
+    ```bash
+    bash setup-project.sh
+    bash run-project.sh
+    ```
+  </Step>
+  
+  <Step title="Set environment variables">
+    **Linux/macOS:**
+    ```bash
+    export OPENAI_API_KEY="your-openai-key"
+    export ANTHROPIC_API_KEY="your-anthropic-key"
+    export GEMINI_API_KEY="your-gemini-key"
+    export GROK_API_KEY="your-grok-key"
+    ```
+    
+    **Windows (PowerShell):**
+    ```powershell
+    $env:OPENAI_API_KEY="your-openai-key"
+    $env:ANTHROPIC_API_KEY="your-anthropic-key"
+    $env:GEMINI_API_KEY="your-gemini-key"
+    $env:GROK_API_KEY="your-grok-key"
+    ```
+  </Step>
+  
+  <Step title="Run setup script">
+    ```bash
+    ./setup-project.sh
+    ```
+    
+    The script automatically:
+    - Detects your OS (Linux/macOS/Windows)
+    - Terminates conflicting processes on port 5173
+    - Installs frontend dependencies (Node.js packages)
+    - Fixes npm vulnerabilities
+    - Creates Python virtual environment
+    - Installs backend dependencies with `uv` (falls back to `pip`)
+    - Handles cross-platform compatibility
+  </Step>
+  
+  <Step title="Start the application">
+    ```bash
+    ./run-project.sh
+    ```
+    
+    This starts:
+    - Frontend on `http://localhost:5173`
+    - Backend on `http://localhost:8000`
+  </Step>
+</Steps>
+
+### Option 2: Manual setup
+
+For more control over the installation process:
+
+#### Backend installation
+
+<Steps>
+  <Step title="Clone repository">
+    ```bash
+    git clone https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2.git
+    cd clef2025-checkthat-lab-task2
+    ```
+  </Step>
+  
+  <Step title="Create virtual environment">
+    ```bash
+    # Create virtual environment
+    python -m venv .venv
+    
+    # Activate virtual environment
+    # Linux/macOS:
+    source .venv/bin/activate
+    
+    # Windows:
+    .venv\Scripts\activate
+    ```
+    
+    You should see `(.venv)` in your terminal prompt indicating the virtual environment is active.
+  </Step>
+  
+  <Step title="Install Python dependencies">
+    ```bash
+    pip install -r requirements.txt
+    ```
+    
+    This installs:
+    - `fastapi[standard]` - Web framework
+    - `uvicorn[standard]` - ASGI server
+    - AI provider SDKs: `openai`, `anthropic`, `together`, `google-genai`, `xai-sdk`
+    - Data processing: `pandas`, `numpy`, `nltk`, `scipy`, `scikit-learn`
+    - Evaluation: `deepeval` for G-Eval metrics
+    - Utilities: `pydantic`, `pydantic-settings`, `httpx`, `requests`
+  </Step>
+  
+  <Step title="Download NLTK data (for METEOR scoring)">
+    ```bash
+    python -c "import nltk; nltk.download('punkt'); nltk.download('wordnet')"
+    ```
+  </Step>
+  
+  <Step title="Set environment variables">
+    Create a `.env` file in the project root:
+    
+    ```bash
+    # .env
+    OPENAI_API_KEY=your-openai-key
+    ANTHROPIC_API_KEY=your-anthropic-key
+    GEMINI_API_KEY=your-gemini-key
+    GROK_API_KEY=your-grok-key
+    
+    # Optional configuration
+    ENV_TYPE=dev
+    LOG_LEVEL=INFO
+    CORS_ORIGINS=*
+    ```
+  </Step>
+  
+  <Step title="Start backend server">
+    ```bash
+    cd src/api
+    python main.py
+    ```
+    
+    Or use FastAPI's development server:
+    ```bash
+    cd src/api
+    fastapi dev main.py --host 0.0.0.0 --port 8000
+    ```
+    
+    The API will be available at `http://localhost:8000`.
+  </Step>
+</Steps>
+
+#### Frontend installation
+
+<Steps>
+  <Step title="Navigate to app directory">
+    Open a new terminal window and navigate to the frontend directory:
+    
+    ```bash
+    cd src/app
+    ```
+  </Step>
+  
+  <Step title="Install Node.js dependencies">
+    ```bash
+    npm install
+    ```
+    
+    This installs:
+    - **Framework**: React 19, React Router v7
+    - **Build tool**: Vite 7
+    - **Styling**: Tailwind CSS 4
+    - **UI components**: Radix UI primitives, Lucide icons
+    - **Utilities**: TypeScript, class-variance-authority, clsx
+  </Step>
+  
+  <Step title="Fix vulnerabilities (optional)">
+    ```bash
+    npm audit fix
+    ```
+    
+    For breaking changes:
+    ```bash
+    npm audit fix --force
+    ```
+  </Step>
+  
+  <Step title="Start development server">
+    ```bash
+    npm run dev
+    ```
+    
+    The frontend will be available at `http://localhost:5173`.
+  </Step>
+</Steps>
+
+## Configuration
+
+### Environment variables
+
+CheckThat AI uses environment variables for configuration. Here's the complete reference:
+
+#### API keys
+
+```bash
+# AI Provider API Keys
+OPENAI_API_KEY=sk-...           # OpenAI GPT models
+ANTHROPIC_API_KEY=sk-ant-...    # Anthropic Claude models
+GEMINI_API_KEY=...              # Google Gemini models
+GROK_API_KEY=...                # xAI Grok models
+```
+
+#### Backend configuration
+
+```bash
+# Environment type: dev, prod, or test
+ENV_TYPE=dev
+
+# Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL=INFO
+
+# CORS configuration
+# Use "*" for public API or comma-separated origins
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Server configuration
+HOST=0.0.0.0
+PORT=8000
+```
+
+#### Frontend configuration
+
+The frontend automatically connects to the backend at `http://localhost:8000` in development. For production, update the API URL in `src/app/client/src/lib/config.ts`:
+
+```typescript
+// src/app/client/src/lib/config.ts
+export const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://your-api-domain.com'
+  : 'http://localhost:8000';
+```
+
+### Persistent environment variables
+
+To make environment variables persistent across terminal sessions:
+
+#### Linux/macOS
+
+Add to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.):
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export OPENAI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
+export GEMINI_API_KEY="your-key"
+export GROK_API_KEY="your-key"
+```
+
+Then reload:
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+#### Windows
+
+**PowerShell Profile:**
+
+1. Open PowerShell and run:
+   ```powershell
+   notepad $PROFILE
+   ```
+
+2. Add your environment variables:
+   ```powershell
+   $env:OPENAI_API_KEY="your-key"
+   $env:ANTHROPIC_API_KEY="your-key"
+   $env:GEMINI_API_KEY="your-key"
+   $env:GROK_API_KEY="your-key"
+   ```
+
+3. Save and reload:
+   ```powershell
+   . $PROFILE
+   ```
+
+**System Environment Variables:**
+
+1. Open System Properties → Environment Variables
+2. Add new user or system variables
+3. Restart your terminal
+
+## Production deployment
+
+### Building for production
+
+#### Backend
+
+The FastAPI backend is production-ready by default. For deployment:
+
+```bash
+# Install production dependencies
+pip install -r requirements.txt
+
+# Run with production ASGI server
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+#### Frontend
+
+Build the frontend for production:
+
+```bash
+cd src/app
+npm run build
+```
+
+This creates optimized static files in `src/app/dist/` ready for deployment to:
+- GitHub Pages
+- Netlify
+- Vercel
+- AWS S3 + CloudFront
+- Any static hosting service
+
+### Deployment options
+
+#### GitHub Pages (frontend)
+
+The project includes a deploy script:
+
+```bash
+cd src/app
+npm run deploy
+```
+
+This builds and deploys to the `/docs` folder for GitHub Pages.
+
+#### Cloud hosting (backend)
+
+**Render:**
+
+1. Create a new Web Service on Render
+2. Connect your repository
+3. Configure:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+4. Add environment variables in Render dashboard
+
+**Railway:**
+
+1. Create new project from GitHub repo
+2. Railway auto-detects Python and installs dependencies
+3. Add environment variables
+4. Deploy automatically on push
+
+**AWS/GCP/Azure:**
+
+Deploy as a containerized application using Docker:
+
+```dockerfile
+# Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+Build and deploy:
+```bash
+docker build -t checkthat-ai .
+docker run -p 8000:8000 --env-file .env checkthat-ai
+```
+
+## Troubleshooting
+
+### Common issues
+
+#### Port already in use
+
+**Problem**: Error "Port 5173 already in use" or "Port 8000 already in use"
+
+**Solution**:
+
+```bash
+# Find and kill process on port 5173 (frontend)
+# Linux/macOS:
+lsof -ti:5173 | xargs kill -9
+
+# Windows:
+netstat -ano | findstr :5173
+taskkill /PID <PID> /F
+
+# Find and kill process on port 8000 (backend)
+# Linux/macOS:
+lsof -ti:8000 | xargs kill -9
+
+# Windows:
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+```
+
+#### Permission denied on scripts
+
+**Problem**: `./setup-project.sh: Permission denied`
+
+**Solution**:
+```bash
+chmod +x setup-project.sh run-project.sh
+./setup-project.sh
+```
+
+#### Windows script execution
+
+**Problem**: Scripts don't run on Windows
+
+**Solution**: Use Git Bash or WSL:
+```bash
+bash setup-project.sh
+bash run-project.sh
+```
+
+Or install WSL:
+```powershell
+wsl --install
+```
+
+#### npm install fails
+
+**Problem**: `npm install` fails with errors
+
+**Solution**:
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Remove node_modules and package-lock.json
+rm -rf node_modules package-lock.json
+
+# Reinstall
+npm install
+
+# If still failing, update npm
+npm install -g npm@latest
+```
+
+#### Python module not found
+
+**Problem**: `ModuleNotFoundError: No module named 'fastapi'`
+
+**Solution**:
+```bash
+# Ensure virtual environment is activated
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
+
+# Reinstall dependencies
+pip install -r requirements.txt
+
+# Verify installation
+pip list | grep fastapi
+```
+
+#### NLTK data missing
+
+**Problem**: `LookupError: Resource punkt not found`
+
+**Solution**:
+```bash
+python -c "import nltk; nltk.download('punkt'); nltk.download('wordnet'); nltk.download('omw-1.4')"
+```
+
+#### API key not working
+
+**Problem**: "Invalid API key" or "Unauthorized" errors
+
+**Solution**:
+1. Verify API key is correct (no extra spaces)
+2. Check API key has sufficient credits/quota
+3. Ensure environment variable is set:
+   ```bash
+   echo $OPENAI_API_KEY  # Linux/macOS
+   echo $env:OPENAI_API_KEY  # Windows PowerShell
+   ```
+4. Restart terminal and reactivate environment
+5. Check provider's status page for outages
+
+#### CORS errors in browser
+
+**Problem**: "CORS policy: No 'Access-Control-Allow-Origin' header"
+
+**Solution**:
+
+1. Verify backend is running on correct port
+2. Check CORS configuration in `api/core/config.py`
+3. Set CORS_ORIGINS environment variable:
+   ```bash
+   export CORS_ORIGINS="http://localhost:5173"
+   ```
+4. Restart backend server
+
+#### Frontend build fails
+
+**Problem**: `npm run build` fails with TypeScript errors
+
+**Solution**:
+```bash
+# Check Node.js version (requires v18+)
+node --version
+
+# Update dependencies
+npm update
+
+# Clear TypeScript cache
+rm -rf node_modules/.cache
+
+# Rebuild
+npm run build
+```
+
+### Getting help
+
+If you're still experiencing issues:
+
+1. **Check logs**: Look for error messages in terminal output
+2. **Search issues**: Check [GitHub Issues](https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2/issues)
+3. **Create issue**: Report bugs with:
+   - Operating system and version
+   - Node.js and Python versions
+   - Complete error messages
+   - Steps to reproduce
+4. **Community support**: Join discussions on the repository
+
+## Next steps
+
+Now that you have CheckThat AI installed:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Learn how to make your first API call
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Explore all available endpoints
+  </Card>
+  
+  <Card title="Evaluation Methods" icon="chart-line" href="/evaluation">
+    Understand normalization strategies
+  </Card>
+  
+  <Card title="Model Comparison" icon="brain" href="/models">
+    Compare AI models and choose the best fit
+  </Card>
+</CardGroup>

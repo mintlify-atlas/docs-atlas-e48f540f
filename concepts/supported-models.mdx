@@ -1,0 +1,705 @@
+---
+title: "Supported AI Models"
+description: "Complete list of AI models supported by CheckThat AI with capabilities and configuration"
+icon: "microchip"
+---
+
+## Overview
+
+CheckThat AI supports **18+ state-of-the-art AI models** from 5 major providers. All models support claim normalization, with most supporting structured outputs, refinement, and evaluation.
+
+<Info>
+Model routing is handled automatically by the `LLMRouter` class in `api/_utils/LLMRouter.py`, which detects the provider and initializes the appropriate API client.
+</Info>
+
+## Supported Providers
+
+<CardGroup cols={3}>
+  <Card title="OpenAI" icon="openai" color="#10b981">
+    GPT-5, GPT-4, o3, o4-mini
+    
+    **Best for**: Production use, balanced performance
+  </Card>
+  
+  <Card title="Anthropic" icon="a" color="#8b5cf6">
+    Claude Sonnet 4, Claude Opus 4.1
+    
+    **Best for**: High-quality claims, nuanced understanding
+  </Card>
+  
+  <Card title="Google" icon="google" color="#3b82f6">
+    Gemini 2.5 Pro, Gemini 2.5 Flash
+    
+    **Best for**: Fast inference, cost-effectiveness
+  </Card>
+  
+  <Card title="xAI" icon="x" color="#1d4ed8">
+    Grok 3, Grok 4, Grok 3 Mini
+    
+    **Best for**: Real-time claims, current events
+  </Card>
+  
+  <Card title="Meta (via Together AI)" icon="meta" color="#0668e1">
+    Llama 3.3 70B Turbo
+    
+    **Best for**: Open-source, customization
+  </Card>
+  
+  <Card title="DeepSeek (via Together AI)" icon="brain" color="#f59e0b">
+    DeepSeek R1 Distill Llama 70B
+    
+    **Best for**: Research, reasoning tasks
+  </Card>
+</CardGroup>
+
+## Complete Model List
+
+### OpenAI Models
+
+<ResponseField name="gpt-5-2025-08-07" type="GPT-5">
+  **Display Name**: GPT-5
+  
+  OpenAI's latest flagship model with enhanced reasoning and claim understanding.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: High-stakes fact-checking, complex claims, production workloads
+  
+  **Cost**: Premium
+</ResponseField>
+
+<ResponseField name="gpt-5-nano-2025-08-07" type="GPT-5 nano">
+  **Display Name**: GPT-5 nano
+  
+  Efficient version of GPT-5 optimized for speed and cost.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: High-volume processing, cost-sensitive applications
+  
+  **Cost**: Moderate
+</ResponseField>
+
+<ResponseField name="o3-2025-04-16" type="o3">
+  **Display Name**: o3
+  
+  OpenAI's reasoning model with advanced chain-of-thought capabilities.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ⚠️ Streaming (limited)
+  
+  **Use Cases**: Complex ambiguity resolution, multi-step reasoning
+  
+  **Cost**: Premium
+</ResponseField>
+
+<ResponseField name="o4-mini-2025-04-16" type="o4-mini">
+  **Display Name**: o4-mini
+  
+  Compact reasoning model balancing quality and efficiency.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ⚠️ Streaming (limited)
+  
+  **Use Cases**: Moderate complexity claims, budget-conscious reasoning tasks
+  
+  **Cost**: Low
+</ResponseField>
+
+### Anthropic Models
+
+<ResponseField name="claude-sonnet-4-20250514" type="Claude Sonnet 4">
+  **Display Name**: Claude Sonnet 4
+  
+  Anthropic's balanced model with excellent claim understanding.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ⚠️ Structured Outputs (Pydantic only)
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: General fact-checking, nuanced content, production use
+  
+  **Cost**: Moderate
+  
+  **Note**: Currently only supports Pydantic model structured outputs, not JSON schema
+</ResponseField>
+
+<ResponseField name="claude-opus-4-1-20250805" type="Claude Opus 4.1">
+  **Display Name**: Claude Opus 4.1
+  
+  Anthropic's most capable model with superior reasoning.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ❌ Structured Outputs (not yet supported)
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: High-quality claims, complex disambiguation, critical applications
+  
+  **Cost**: Premium
+</ResponseField>
+
+### Google Models
+
+<ResponseField name="gemini-2.5-pro" type="Gemini 2.5 Pro">
+  **Display Name**: Gemini 2.5 Pro
+  
+  Google's flagship model with strong factual grounding.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs (JSON Schema)
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: Fact verification, verifiability assessment, production workloads
+  
+  **Cost**: Moderate
+</ResponseField>
+
+<ResponseField name="gemini-2.5-flash" type="Gemini 2.5 Flash">
+  **Display Name**: Gemini 2.5 Flash
+  
+  Fast, efficient Gemini model optimized for speed.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs (JSON Schema)
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: High-volume processing, real-time applications, cost optimization
+  
+  **Cost**: Low
+</ResponseField>
+
+### xAI Models (Grok)
+
+<ResponseField name="grok-3" type="Grok 3">
+  **Display Name**: Grok 3
+  
+  xAI's base model with real-time knowledge integration.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: Current events, real-time claims, news fact-checking
+  
+  **Cost**: Moderate
+</ResponseField>
+
+<ResponseField name="grok-4-0709" type="Grok 4">
+  **Display Name**: Grok 4
+  
+  xAI's latest model with enhanced reasoning and real-time web access.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: Time-sensitive claims, breaking news, relevance assessment
+  
+  **Cost**: Moderate-Premium
+</ResponseField>
+
+<ResponseField name="grok-3-mini" type="Grok 3 Mini">
+  **Display Name**: Grok 3 Mini
+  
+  Compact Grok model for efficient processing.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs
+  - ✅ Refinement
+  - ✅ Evaluation (G-Eval)
+  - ✅ Streaming
+  
+  **Use Cases**: High-volume current events monitoring, cost-effective processing
+  
+  **Cost**: Low
+</ResponseField>
+
+### Together AI Models
+
+<ResponseField name="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free" type="Llama 3.3 70B">
+  **Display Name**: Llama 3.3 70B
+  
+  Meta's open-source flagship model with strong instruction following.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ✅ Structured Outputs (JSON Schema)
+  - ✅ Refinement
+  - ❌ Evaluation (not supported by DeepEval)
+  - ✅ Streaming
+  
+  **Use Cases**: Open-source deployments, customization, research
+  
+  **Cost**: Free (via Together AI)
+</ResponseField>
+
+<ResponseField name="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" type="DeepSeek R1 Distill Llama 70B">
+  **Display Name**: DeepSeek R1 Distill Llama 70B
+  
+  DeepSeek's reasoning-enhanced Llama distillation.
+  
+  **Capabilities**:
+  - ✅ Claim Normalization
+  - ⚠️ Structured Outputs (limited)
+  - ✅ Refinement
+  - ❌ Evaluation (not supported by DeepEval)
+  - ✅ Streaming
+  
+  **Use Cases**: Research, reasoning-heavy claims, cost-free experimentation
+  
+  **Cost**: Free (via Together AI)
+</ResponseField>
+
+## Model Comparison Table
+
+<table>
+  <thead>
+    <tr>
+      <th>Model</th>
+      <th>Provider</th>
+      <th>Quality</th>
+      <th>Speed</th>
+      <th>Cost</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GPT-5</td>
+      <td>OpenAI</td>
+      <td>⭐⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡</td>
+      <td>$$$</td>
+      <td>Production, high-stakes</td>
+    </tr>
+    <tr>
+      <td>Claude Opus 4.1</td>
+      <td>Anthropic</td>
+      <td>⭐⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡</td>
+      <td>$$$</td>
+      <td>Complex claims, quality</td>
+    </tr>
+    <tr>
+      <td>Claude Sonnet 4</td>
+      <td>Anthropic</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡</td>
+      <td>$$</td>
+      <td>Balanced, production</td>
+    </tr>
+    <tr>
+      <td>Gemini 2.5 Pro</td>
+      <td>Google</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡⚡</td>
+      <td>$$</td>
+      <td>Factual consistency</td>
+    </tr>
+    <tr>
+      <td>Gemini 2.5 Flash</td>
+      <td>Google</td>
+      <td>⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡⚡</td>
+      <td>$</td>
+      <td>High volume, speed</td>
+    </tr>
+    <tr>
+      <td>Grok 4</td>
+      <td>xAI</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡</td>
+      <td>$$</td>
+      <td>Current events</td>
+    </tr>
+    <tr>
+      <td>GPT-5 nano</td>
+      <td>OpenAI</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡⚡</td>
+      <td>$$</td>
+      <td>Cost-effective quality</td>
+    </tr>
+    <tr>
+      <td>Llama 3.3 70B</td>
+      <td>Together AI</td>
+      <td>⭐⭐⭐</td>
+      <td>⚡⚡⚡⚡</td>
+      <td>Free</td>
+      <td>Open-source, research</td>
+    </tr>
+  </tbody>
+</table>
+
+## API Configuration
+
+### Automatic Model Routing
+
+CheckThat AI automatically routes requests to the correct provider:
+
+```python From api/_utils/LLMRouter.py:14-43
+class LLMRouter:
+    def __init__(self, model: str, api_key: Optional[str] = None):
+        self.model = model
+        
+        # Automatic provider detection
+        if model in OPENAI_MODELS:
+            self.api_provider = 'OPENAI'
+        elif model in xAI_MODELS:
+            self.api_provider = 'XAI'
+        elif model in TOGETHER_MODELS:
+            self.api_provider = 'TOGETHER'
+        elif model in ANTHROPIC_MODELS:
+            self.api_provider = 'ANTHROPIC'
+        elif model in GEMINI_MODELS:
+            self.api_provider = 'GEMINI'
+        else:
+            raise ValueError(f"Unsupported model: {model}")
+        
+        self.api_key = api_key
+    
+    def getAPIClient(self):
+        """Returns appropriate API client for the model."""
+        if self.api_provider == 'OPENAI':
+            return OpenAIModel(model=self.model, api_key=self.api_key)
+        elif self.api_provider == 'XAI':
+            return xAIModel(model=self.model, api_key=self.api_key)
+        elif self.api_provider == 'TOGETHER':
+            return TogetherModel(model=self.model, api_key=self.api_key)
+        elif self.api_provider == 'ANTHROPIC':
+            return AnthropicModel(model=self.model, api_key=self.api_key)
+        elif self.api_provider == 'GEMINI':
+            return GeminiModel(model=self.model, api_key=self.api_key)
+```
+
+### Model Constants
+
+```python From api/_types.py:4-17
+# OpenAI Models
+OPENAI_MODELS = [
+    "gpt-5-2025-08-07", "gpt-5-nano-2025-08-07", 
+    "o3-2025-04-16", "o4-mini-2025-04-16"
+]
+
+# xAI Models
+xAI_MODELS = ["grok-3", "grok-4-0709", "grok-3-mini"]
+
+# Together AI Models
+TOGETHER_MODELS = [
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"
+]
+
+# Anthropic Models
+ANTHROPIC_MODELS = ["claude-sonnet-4-20250514", "claude-opus-4-1-20250805"]
+
+# Google Models
+GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash"]
+```
+
+### Using Different Models
+
+```python
+import openai
+
+client = openai.OpenAI(
+    base_url="https://api.checkthat.ai/v1",
+    api_key="your-checkthat-api-key"
+)
+
+# Use GPT-5
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": "Your claim..."}]
+)
+
+# Use Claude Sonnet 4
+response = client.chat.completions.create(
+    model="claude-sonnet-4-20250514",
+    messages=[{"role": "user", "content": "Your claim..."}]
+)
+
+# Use Gemini Flash (fast & cheap)
+response = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Your claim..."}]
+)
+
+# Use Llama (free via Together AI)
+response = client.chat.completions.create(
+    model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    messages=[{"role": "user", "content": "Your claim..."}]
+)
+```
+
+## Structured Output Support
+
+Models with structured output support can return JSON according to a schema:
+
+```python From api/_types.py:42-55
+STRUCTURED_OUTPUT_SUPPORTED_MODELS = [
+    # OpenAI models
+    "gpt-5-2025-08-07", "gpt-5-nano-2025-08-07", 
+    "o3-2025-04-16", "o4-mini-2025-04-16",
+    "gpt-4o-2024-08-06", "gpt-4o-mini-2024-07-18",
+    
+    # Gemini models
+    "gemini-2.5-pro", "gemini-2.5-flash",
+    
+    # xAI models
+    "grok-3", "grok-4-0709", "grok-3-mini",
+    
+    # Together AI models (some support)
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    
+    # Anthropic models (Pydantic only)
+    "claude-sonnet-4-20250514"
+]
+```
+
+<Warning>
+**Anthropic Limitation**: Claude models currently only support Pydantic model structured outputs, not JSON schema. Use other providers for full JSON schema support.
+</Warning>
+
+## Provider-Specific Features
+
+### OpenAI
+
+```python From api/_utils/openai.py:18-29
+class OpenAIModel:
+    def __init__(self, model: str, api_key: str = None):
+        self.model = model
+        self.api_key = api_key
+        self.client = OpenAI(api_key=self.api_key)
+```
+
+**Features**:
+- Native structured outputs via `response_format`
+- Streaming support
+- Function calling
+- JSON mode
+- Vision capabilities (GPT-4o, GPT-5)
+
+### Anthropic
+
+```python From api/_utils/anthropic.py:21-32
+class AnthropicModel:
+    def __init__(self, model: str, api_key: str = None):
+        self.model = model
+        self.api_key = api_key
+        self.client = anthropic.Anthropic(api_key=self.api_key)
+```
+
+**Features**:
+- Streaming support
+- System message separation
+- Instructor integration for Pydantic models
+- OpenAI-compatible response formatting
+
+### Google (Gemini)
+
+```python From api/_utils/gemini.py:19-33
+class GeminiModel:
+    def __init__(self, model: str, api_key: str = None):
+        if not api_key:
+            raise ValueError("Gemini API key is required")
+        self.model = model
+        self.api_key = api_key
+        self.client = genai.Client(api_key=self.api_key)
+```
+
+**Features**:
+- Native JSON schema support
+- System instructions
+- Streaming support
+- Safety ratings
+- Multimodal capabilities
+
+### xAI (Grok)
+
+```python From api/_utils/xai.py:20-32
+class xAIModel:
+    def __init__(self, model: str, api_key: str = None):
+        self.model = model
+        self.api_key = api_key
+        self.client = OpenAI(
+            api_key=self.api_key, 
+            base_url="https://api.x.ai/v1"
+        )
+```
+
+**Features**:
+- OpenAI-compatible API
+- Real-time web access
+- Streaming support
+- JSON schema support
+
+### Together AI
+
+```python From api/_utils/togetherAI.py:19-30
+class TogetherModel:
+    def __init__(self, model: str, api_key: str = None):
+        self.model = model
+        self.api_key = api_key
+        self.client = Together(api_key=self.api_key)
+```
+
+**Features**:
+- Free tier for Llama and DeepSeek models
+- OpenAI-compatible responses
+- JSON schema support
+- Streaming support
+
+## Model Selection Guide
+
+<Tabs>
+  <Tab title="By Use Case">
+    **Production Fact-Checking**
+    - Primary: Claude Sonnet 4, GPT-5 nano
+    - Backup: Gemini 2.5 Pro
+    
+    **High-Stakes Claims**
+    - Primary: GPT-5, Claude Opus 4.1
+    - Backup: Gemini 2.5 Pro
+    
+    **High-Volume Processing**
+    - Primary: Gemini 2.5 Flash
+    - Backup: GPT-5 nano, Grok 3 Mini
+    
+    **Current Events**
+    - Primary: Grok 4
+    - Backup: Grok 3, GPT-5
+    
+    **Cost-Sensitive**
+    - Primary: Llama 3.3 70B (free)
+    - Backup: Gemini 2.5 Flash, GPT-5 nano
+    
+    **Research & Development**
+    - Primary: DeepSeek R1, Llama 3.3 70B
+    - Backup: o3, Claude Opus 4.1
+  </Tab>
+  
+  <Tab title="By Budget">
+    **Free**
+    - Llama 3.3 70B (Together AI)
+    - DeepSeek R1 Distill (Together AI)
+    
+    **Low Cost ($)**
+    - Gemini 2.5 Flash
+    - Grok 3 Mini
+    - o4-mini
+    
+    **Moderate Cost ($$)**
+    - GPT-5 nano
+    - Claude Sonnet 4
+    - Gemini 2.5 Pro
+    - Grok 3, Grok 4
+    
+    **Premium ($$$)**
+    - GPT-5
+    - Claude Opus 4.1
+    - o3
+  </Tab>
+  
+  <Tab title="By Latency">
+    **Fastest (under 1s)**
+    - Gemini 2.5 Flash
+    - GPT-5 nano
+    - Grok 3 Mini
+    
+    **Fast (1-2s)**
+    - Claude Sonnet 4
+    - Gemini 2.5 Pro
+    - Grok 3, Grok 4
+    - Llama 3.3 70B
+    
+    **Moderate (2-4s)**
+    - GPT-5
+    - Claude Opus 4.1
+    
+    **Slow (4-10s)**
+    - o3 (reasoning-heavy)
+    - DeepSeek R1 (reasoning-heavy)
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<Steps>
+  <Step title="Start with Balanced Models">
+    Begin with Claude Sonnet 4 or GPT-5 nano for the best balance of quality, speed, and cost.
+  </Step>
+  
+  <Step title="Test Multiple Models">
+    Run A/B tests with 2-3 models to find the best fit for your specific use case.
+  </Step>
+  
+  <Step title="Use Faster Models for Refinement">
+    If using refinement, consider faster models (Gemini Flash, GPT-5 nano) to reduce latency.
+  </Step>
+  
+  <Step title="Reserve Premium Models for Hard Cases">
+    Use GPT-5 or Claude Opus only for complex claims that require maximum quality.
+  </Step>
+  
+  <Step title="Monitor Model Performance">
+    Track evaluation scores by model to identify which models work best for your content.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Claim Normalization" icon="filter" href="/concepts/claim-normalization">
+    Learn how models normalize claims from social media posts
+  </Card>
+  
+  <Card title="Refinement Pipeline" icon="arrows-rotate" href="/concepts/refinement-pipeline">
+    See how models iteratively improve claim quality
+  </Card>
+  
+  <Card title="Evaluation Metrics" icon="chart-line" href="/concepts/evaluation-metrics">
+    Understand how models evaluate claim quality
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Start using models via the CheckThat AI API
+  </Card>
+</CardGroup>

@@ -1,0 +1,395 @@
+---
+title: "Grok Models"
+description: "Use xAI's Grok models with CheckThat API"
+---
+
+## Overview
+
+CheckThat integrates with xAI's Grok models, providing access to advanced AI capabilities with unique characteristics optimized for reasoning, analysis, and real-time information processing. Grok models are built by xAI with OpenAI-compatible APIs.
+
+## Available Models
+
+The following Grok models are available through CheckThat:
+
+<ParamField path="grok-3" type="string">
+  **Grok 3** - Previous generation model with strong reasoning capabilities
+</ParamField>
+
+<ParamField path="grok-4-0709" type="string">
+  **Grok 4** - Latest generation model with enhanced performance and reasoning
+</ParamField>
+
+<ParamField path="grok-3-mini" type="string">
+  **Grok 3 Mini** - Compact model optimized for speed and efficiency
+</ParamField>
+
+## Configuration
+
+### API Key Setup
+
+<ParamField path="api_key" type="string" required>
+  Your xAI API key. Get your key from [xAI Console](https://console.x.ai/).
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The model identifier from the available models list above.
+</ParamField>
+
+### Request Parameters
+
+Grok models use OpenAI-compatible parameters:
+
+<ParamField path="messages" type="array" required>
+  Array of message objects with `role` and `content` fields.
+  ```json
+  [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ]
+  ```
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Controls randomness in responses. Range: 0.0 to 2.0.
+</ParamField>
+
+<ParamField path="max_tokens" type="integer">
+  Maximum number of tokens to generate in the response.
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Enable streaming responses for real-time output.
+</ParamField>
+
+<ParamField path="response_format" type="object">
+  Structured output format specification (JSON schema).
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Completion
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "grok-4-0709",
+    "provider": "xai",
+    "xai_api_key": "YOUR_XAI_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are Grok, a helpful AI assistant."},
+        {"role": "user", "content": "Explain artificial general intelligence."}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Streaming Response
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "grok-4-0709",
+    "provider": "xai",
+    "xai_api_key": "YOUR_XAI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Write a comprehensive analysis of blockchain technology."}
+    ],
+    "stream": True
+}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as response:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode('utf-8'))
+```
+
+### Structured Output
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+schema = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "key_insights": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "confidence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+        }
+    },
+    "required": ["title", "summary", "key_insights"]
+}
+
+payload = {
+    "model": "grok-4-0709",
+    "provider": "xai",
+    "xai_api_key": "YOUR_XAI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Analyze the impact of AI on healthcare."}
+    ],
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "analysis_result",
+            "schema": schema
+        }
+    }
+}
+
+response = requests.post(url, json=payload, headers=headers)
+result = response.json()
+print(result)
+```
+
+### Multi-turn Conversation
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "grok-4-0709",
+    "provider": "xai",
+    "xai_api_key": "YOUR_XAI_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are Grok, an AI assistant with a focus on accuracy."},
+        {"role": "user", "content": "What are transformer models?"},
+        {"role": "assistant", "content": "Transformer models are neural networks that use self-attention mechanisms to process sequential data."},
+        {"role": "user", "content": "How do they differ from RNNs?"}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+## Features and Capabilities
+
+### OpenAI-Compatible API
+
+xAI's Grok models use OpenAI-compatible endpoints (`xai.py:20-164`):
+```python
+self.client = OpenAI(
+    api_key=self.api_key, 
+    base_url="https://api.x.ai/v1"
+)
+```
+
+This provides:
+- Familiar OpenAI SDK interface
+- Standard message formatting
+- Compatible response structures
+- Easy migration from OpenAI
+
+### Structured Output Support
+
+All Grok models support structured outputs via JSON schema (`xai.py:109-157`):
+
+**JSON Schema Support:**
+```python
+response = client.chat.completions.create(
+    model=model,
+    messages=messages,
+    response_format=response_format
+)
+```
+
+**Pydantic Model Support:**
+```python
+response = client.beta.chat.completions.parse(
+    model=model,
+    messages=messages,
+    response_format=pydantic_model
+)
+```
+
+**Supported Models:**
+- grok-3
+- grok-4-0709
+- grok-3-mini
+
+### Conversation History Management
+
+Automatic conversation formatting using OpenAI format (`xai.py:69-87`):
+```python
+if conversation_history:
+    messages = conversation_manager.format_for_openai(
+        sys_prompt, conversation_history, user_prompt
+    )
+```
+
+### Streaming Support
+
+Real-time streaming with OpenAI-compatible chunks (`xai.py:51-67`):
+```python
+stream = client.chat.completions.create(
+    model=model,
+    messages=messages,
+    stream=True
+)
+```
+
+Returns `Stream[ChatCompletionChunk]` for seamless integration.
+
+### Direct Parameter Pass-Through
+
+Flexible parameter handling (`xai.py:34-49`):
+```python
+response = client.chat.completions.create(**completion_params)
+```
+
+Allows passing any OpenAI-compatible parameters directly to the API.
+
+## Implementation Details
+
+CheckThat's xAI integration (`xai.py:20-164`) provides:
+
+- **OpenAI SDK**: Uses official OpenAI Python SDK with xAI base URL
+- **Full compatibility**: Supports all OpenAI-style parameters and features
+- **Structured outputs**: Both JSON schema and Pydantic model formats
+- **Streaming**: Native streaming support with chunks
+- **Conversation management**: Automatic message formatting
+
+### Structured Response Object
+
+For JSON schema responses, CheckThat returns a `StructuredResponse` object:
+```python
+class StructuredResponse:
+    def __init__(self, content: str, parsed: Any):
+        self.content = content  # Raw JSON string
+        self.parsed = parsed    # Parsed Python object
+```
+
+### Response Format Options
+
+**Dict-based JSON Schema:**
+```python
+response_format = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "response_schema",
+        "schema": {...}
+    }
+}
+```
+
+**Pydantic Model:**
+```python
+from pydantic import BaseModel
+
+class MyResponse(BaseModel):
+    field1: str
+    field2: int
+
+response_format = MyResponse
+```
+
+## Rate Limits and Pricing
+
+Rate limits and pricing are determined by your xAI API tier. CheckThat does not impose additional limits.
+
+Refer to [xAI pricing](https://x.ai/api) for current rates:
+- **Grok 4**: Latest model with premium pricing
+- **Grok 3**: Previous generation with standard pricing
+- **Grok 3 Mini**: Cost-optimized for high-volume use
+
+## Error Handling
+
+```python
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+except requests.exceptions.HTTPError as e:
+    if e.response.status_code == 400:
+        error_detail = e.response.json()
+        print(f"Bad request: {error_detail}")
+    elif e.response.status_code == 401:
+        print("Invalid xAI API key")
+    elif e.response.status_code == 429:
+        print("Rate limit exceeded - implement backoff")
+    else:
+        print(f"API Error {e.response.status_code}: {e}")
+except ValueError as e:
+    print(f"JSON parsing error: {e}")
+except Exception as e:
+    print(f"Request failed: {e}")
+```
+
+Common error codes:
+- **400**: Invalid request format or parameters
+- **401**: Invalid API key
+- **429**: Rate limit exceeded
+- **500**: xAI service error
+
+## Best Practices
+
+1. **Choose the right model**: Use Grok 4 for best performance, Grok 3 Mini for speed
+2. **Leverage structured outputs**: Use JSON schema for reliable data extraction
+3. **Implement streaming**: Enable streaming for better UX on long responses
+4. **System prompts**: Grok responds well to clear, specific system instructions
+5. **Error handling**: Implement retry logic with exponential backoff for 429 errors
+6. **Conversation context**: Include relevant history for coherent multi-turn dialogues
+7. **Monitor usage**: Track token usage to optimize costs
+8. **Test thoroughly**: Validate structured output schemas before production use
+
+## Model Comparison
+
+### Grok 4 (grok-4-0709)
+- **Best for**: Complex reasoning, analysis, latest capabilities
+- **Performance**: Highest quality responses
+- **Speed**: Standard inference time
+- **Pricing**: Premium tier
+
+### Grok 3
+- **Best for**: General-purpose tasks, balanced performance
+- **Performance**: High-quality responses
+- **Speed**: Standard inference time
+- **Pricing**: Standard tier
+
+### Grok 3 Mini
+- **Best for**: High-volume applications, speed-critical tasks
+- **Performance**: Good quality with optimizations
+- **Speed**: Faster inference
+- **Pricing**: Cost-optimized
+
+## Unique Characteristics
+
+1. **Real-time awareness**: Grok models are designed with focus on current information
+2. **OpenAI compatibility**: Seamless migration from OpenAI with same SDK
+3. **Full structured output support**: Both JSON schema and Pydantic models
+4. **Conversation management**: Built-in conversation history formatting
+5. **xAI ecosystem**: Integration with xAI's broader platform and tools

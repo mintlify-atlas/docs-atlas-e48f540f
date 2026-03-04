@@ -1,0 +1,259 @@
+---
+title: "OpenAI Models"
+description: "Use OpenAI's GPT and o-series models with CheckThat API"
+---
+
+## Overview
+
+CheckThat supports OpenAI's latest language models including GPT-5, o3, and o4-mini. These models provide state-of-the-art natural language understanding and generation capabilities with support for structured outputs, streaming responses, and conversation history.
+
+## Available Models
+
+The following OpenAI models are available through CheckThat:
+
+<ParamField path="gpt-5-2025-08-07" type="string">
+  **GPT-5** - OpenAI's flagship model with advanced reasoning capabilities
+</ParamField>
+
+<ParamField path="gpt-5-nano-2025-08-07" type="string">
+  **GPT-5 nano** - Lightweight version optimized for speed and efficiency
+</ParamField>
+
+<ParamField path="o3-2025-04-16" type="string">
+  **o3** - Advanced reasoning model optimized for complex problem-solving
+</ParamField>
+
+<ParamField path="o4-mini-2025-04-16" type="string">
+  **o4-mini** - Compact reasoning model balancing performance and cost
+</ParamField>
+
+## Configuration
+
+### API Key Setup
+
+<ParamField path="api_key" type="string" required>
+  Your OpenAI API key. Get your key from [OpenAI Platform](https://platform.openai.com/api-keys).
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The model identifier from the available models list above.
+</ParamField>
+
+### Request Parameters
+
+OpenAI models support all standard OpenAI API parameters:
+
+<ParamField path="messages" type="array" required>
+  Array of message objects with `role` and `content` fields.
+  ```json
+  [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ]
+  ```
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Controls randomness in responses. Range: 0.0 to 2.0.
+</ParamField>
+
+<ParamField path="max_tokens" type="integer">
+  Maximum number of tokens to generate in the response.
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Enable streaming responses for real-time output.
+</ParamField>
+
+<ParamField path="response_format" type="object">
+  Structured output format specification (JSON schema).
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Completion
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gpt-5-2025-08-07",
+    "provider": "openai",
+    "openai_api_key": "YOUR_OPENAI_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Explain quantum computing in simple terms."}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Streaming Response
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gpt-5-2025-08-07",
+    "provider": "openai",
+    "openai_api_key": "YOUR_OPENAI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Write a short story about AI."}
+    ],
+    "stream": True
+}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as response:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode('utf-8'))
+```
+
+### Structured Output
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+schema = {
+    "type": "object",
+    "properties": {
+        "claim": {"type": "string"},
+        "confidence": {"type": "number"},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+    },
+    "required": ["claim", "confidence"]
+}
+
+payload = {
+    "model": "gpt-5-2025-08-07",
+    "provider": "openai",
+    "openai_api_key": "YOUR_OPENAI_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Analyze this claim: 'Solar energy is renewable.'"}
+    ],
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "claim_analysis",
+            "schema": schema
+        }
+    }
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### With Conversation History
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "gpt-5-2025-08-07",
+    "provider": "openai",
+    "openai_api_key": "YOUR_OPENAI_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the capital of France?"},
+        {"role": "assistant", "content": "The capital of France is Paris."},
+        {"role": "user", "content": "What is its population?"}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+## Features and Capabilities
+
+### Structured Outputs
+
+All OpenAI models in CheckThat support structured outputs using JSON schema. This ensures responses match your specified format exactly.
+
+**Supported Models:**
+- gpt-5-2025-08-07
+- gpt-5-nano-2025-08-07
+- o3-2025-04-16
+- o4-mini-2025-04-16
+
+### Conversation History
+
+Maintain context across multiple turns by including previous messages in your request. The API automatically formats conversation history for optimal model performance.
+
+### Streaming
+
+Get real-time responses as they're generated using streaming mode. Perfect for chat applications and long-form content generation.
+
+## Implementation Details
+
+CheckThat's OpenAI integration (`openai.py:18-110`) provides:
+
+- **Direct parameter pass-through**: Send any OpenAI-compatible parameters
+- **Response format support**: Full JSON schema and structured output support
+- **Streaming**: Real-time response generation with `Stream[ChatCompletionChunk]`
+- **Legacy methods**: Backward-compatible prompt-based methods
+
+## Rate Limits and Pricing
+
+Rate limits and pricing are determined by your OpenAI API key tier. CheckThat does not impose additional rate limits on OpenAI models.
+
+Refer to [OpenAI's pricing page](https://openai.com/pricing) for current rates:
+- **GPT-5**: Premium tier pricing
+- **GPT-5 nano**: Optimized pricing for high-volume use
+- **o3/o4-mini**: Reasoning model pricing
+
+## Error Handling
+
+The OpenAI integration includes comprehensive error handling:
+
+```python
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+except requests.exceptions.HTTPError as e:
+    print(f"API Error: {e}")
+    print(f"Response: {e.response.text}")
+except requests.exceptions.RequestException as e:
+    print(f"Request failed: {e}")
+```
+
+Common error codes:
+- **401**: Invalid API key
+- **429**: Rate limit exceeded
+- **500**: OpenAI service error
+
+## Best Practices
+
+1. **Use appropriate models**: Choose GPT-5 nano for speed, GPT-5 for quality, o-series for reasoning
+2. **Set max_tokens**: Prevent runaway costs by limiting response length
+3. **Implement retries**: Handle transient failures with exponential backoff
+4. **Stream for UX**: Use streaming for better user experience in chat applications
+5. **Cache responses**: Reduce API calls by caching common queries

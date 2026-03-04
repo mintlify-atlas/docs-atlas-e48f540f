@@ -1,0 +1,330 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate with CheckThat AI API'
+---
+
+## Overview
+
+CheckThat AI supports two authentication methods depending on which endpoint you're using:
+
+1. **API Key in Request Body** - For `/chat` endpoint
+2. **Bearer Token Authentication** - For `/v1/chat/completions` endpoint
+
+## API Key Authentication
+
+For the `/chat` endpoint, include your LLM provider's API key directly in the request body.
+
+### Request Format
+
+<ParamField path="api_key" type="string" required>
+  Your LLM provider's API key (OpenAI, Anthropic, etc.)
+</ParamField>
+
+### Example Request
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "The capital of France is Paris.",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-..."
+  }'
+```
+
+### Provider-Specific Keys
+
+Depending on the model you're using, provide the appropriate API key:
+
+<CodeGroup>
+```bash OpenAI
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Claim to normalize",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-your-openai-key"
+  }'
+```
+
+```bash Anthropic
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Claim to normalize",
+    "model": "claude-sonnet-4-20250514",
+    "api_key": "sk-ant-your-anthropic-key"
+  }'
+```
+
+```bash xAI
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Claim to normalize",
+    "model": "grok-4-0709",
+    "api_key": "xai-your-xai-key"
+  }'
+```
+</CodeGroup>
+
+### Free Models (No API Key Required)
+
+Some models don't require an API key as they're provided through Together AI:
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "The Earth revolves around the Sun.",
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+  }'
+```
+
+Free models:
+- `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free`
+- `deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free`
+
+For Gemini models, the API key is also automatically provided.
+
+## Bearer Token Authentication
+
+The `/v1/chat/completions` endpoint uses Bearer token authentication following OpenAI's standard.
+
+### Request Format
+
+Include your API key in the `Authorization` header:
+
+```http
+Authorization: Bearer sk-proj-your-api-key
+```
+
+### Example Request
+
+```bash
+curl -X POST https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Is this claim accurate?"}
+    ]
+  }'
+```
+
+### Using with OpenAI SDK
+
+The Bearer token approach is compatible with OpenAI SDKs:
+
+<CodeGroup>
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-proj-your-openai-key",
+    base_url="https://api.checkthat-ai.com/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Normalize this claim: The sky is blue."}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript/TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-proj-your-openai-key',
+  baseURL: 'https://api.checkthat-ai.com/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    {role: 'user', content: 'Normalize this claim: The sky is blue.'}
+  ]
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "The Earth is flat."}],
+    "stream": false
+  }'
+```
+</CodeGroup>
+
+## CheckThat AI API Keys
+
+For CheckThat AI-specific features like claim refinement, you may need to provide a `checkthat_api_key`:
+
+```json
+{
+  "model": "gpt-4o",
+  "messages": [{"role": "user", "content": "Claim text"}],
+  "refine_claims": true,
+  "refine_model": "gpt-4o",
+  "checkthat_api_key": "your-provider-api-key"
+}
+```
+
+<Note>
+  The `checkthat_api_key` is used for the refinement model, which may be different from your primary model's API key.
+</Note>
+
+## Authentication Errors
+
+### Missing API Key
+
+**Status Code:** `401 Unauthorized`
+
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+Solution: Include the `Authorization` header with a valid Bearer token.
+
+### Invalid API Key
+
+**Status Code:** `401 Unauthorized` or `403 Forbidden`
+
+```json
+{
+  "error": "Forbidden",
+  "message": "Invalid API key or insufficient permissions"
+}
+```
+
+Solution: Verify your API key is correct and has the necessary permissions.
+
+### Expired Token (Supabase JWT)
+
+If using Supabase authentication for restricted endpoints:
+
+**Status Code:** `401 Unauthorized`
+
+```json
+{
+  "detail": "Token has expired"
+}
+```
+
+Solution: Refresh your JWT token and retry the request.
+
+## Environment Variables
+
+When running CheckThat AI locally or self-hosting, configure these environment variables:
+
+```bash
+# LLM Provider API Keys (server-side)
+OPENAI_API_KEY=sk-proj-...
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=...
+XAI_API_KEY=xai-...
+TOGETHER_API_KEY=...
+
+# Optional: Supabase Authentication
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+<Warning>
+  Never expose your API keys in client-side code or public repositories. Always use environment variables and keep them secure.
+</Warning>
+
+## Guest Mode
+
+CheckThat AI can run in "guest mode" when Supabase authentication is not configured:
+
+```python
+# _utils/supabase_auth.py
+if not SUPABASE_URL or not SUPABASE_JWT_SECRET:
+    logger.info("Supabase configuration not found - running in guest-only mode")
+    self.guest_only_mode = True
+```
+
+In guest mode:
+- Supabase JWT authentication is disabled
+- API key authentication still works for LLM providers
+- Rate limiting is applied to all requests
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep API Keys Secure">
+    - Never commit API keys to version control
+    - Use environment variables or secret management systems
+    - Rotate keys regularly
+    - Use separate keys for development and production
+  </Accordion>
+
+  <Accordion title="Use HTTPS">
+    - Always use HTTPS for API requests
+    - The production API enforces HTTPS connections
+    - Never send API keys over unencrypted connections
+  </Accordion>
+
+  <Accordion title="Implement Rate Limiting">
+    - Respect rate limits to avoid service disruption
+    - Implement exponential backoff for retries
+    - Monitor your API usage
+  </Accordion>
+
+  <Accordion title="Validate Input">
+    - Sanitize user input before sending to the API
+    - Implement input validation on the client side
+    - Handle API errors gracefully
+  </Accordion>
+</AccordionGroup>
+
+## Testing Authentication
+
+Test your authentication setup:
+
+```bash
+# Test health endpoint (no auth required)
+curl https://api.checkthat-ai.com/health
+
+# Test with API key in body
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "Test query",
+    "model": "gpt-4o",
+    "api_key": "sk-proj-..."
+  }'
+
+# Test with Bearer token
+curl https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Authorization: Bearer sk-proj-..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "Test"}]
+  }'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Chat Endpoint" icon="comments" href="/api/chat">
+    Use the /chat endpoint for claim normalization
+  </Card>
+  <Card title="Chat Completions" icon="messages" href="/api/chat-completions">
+    Use OpenAI-compatible completions API
+  </Card>
+</CardGroup>

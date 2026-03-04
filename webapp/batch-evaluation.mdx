@@ -1,0 +1,368 @@
+---
+title: 'Batch Evaluation'
+description: 'Process multiple claims at scale with batch evaluation and comprehensive metrics'
+icon: 'table'
+---
+
+Batch Evaluation allows you to process multiple claims simultaneously, compare different AI models, and evaluate results using automated metrics like METEOR scoring.
+
+<Note>
+**Current Status**: The batch evaluation feature is referenced in the codebase and planned for the web application. Based on the API structure, batch evaluation capabilities are being developed to support:
+- Dataset upload (CSV/JSONL formats)
+- Multi-model comparison
+- Real-time progress tracking via WebSocket
+- Comprehensive METEOR scoring and evaluation metrics
+</Note>
+
+## Overview
+
+Batch Evaluation is designed for researchers and practitioners who need to:
+
+- Normalize large datasets of social media claims
+- Compare multiple AI models on the same dataset
+- Evaluate normalization quality with automated metrics
+- Export results for further analysis
+- Test different prompting strategies at scale
+
+## Supported Features
+
+### Dataset Formats
+
+The system supports two primary dataset formats:
+
+**CSV Format**
+```csv
+id,claim,reference_normalization
+1,"OMG the president is lying about the economy!!!","The president made claims about economic performance"
+2,"Scientists say coffee causes cancer now???","Some studies suggest a link between coffee consumption and cancer risk"
+```
+
+**JSONL Format** (JSON Lines)
+```json
+{"id": 1, "claim": "OMG the president is lying about the economy!!!", "reference": "The president made claims about economic performance"}
+{"id": 2, "claim": "Scientists say coffee causes cancer now???", "reference": "Some studies suggest a link between coffee consumption and cancer risk"}
+```
+
+<Tip>
+JSONL format is recommended for large datasets as it allows streaming and partial processing. Each line is a complete JSON object.
+</Tip>
+
+### Required Fields
+
+- **id**: Unique identifier for each claim
+- **claim**: The noisy, unstructured social media post to normalize
+- **reference** (optional): Ground truth normalization for evaluation metrics
+
+### Evaluation Metrics
+
+The batch evaluation system uses multiple metrics to assess normalization quality:
+
+**METEOR (Metric for Evaluation of Translation with Explicit ORdering)**
+- Primary metric for claim normalization quality
+- Measures semantic similarity between generated and reference normalizations
+- Accounts for synonyms, stemming, and paraphrasing
+- Score range: 0.0 (poor) to 1.0 (perfect match)
+
+**Additional Metrics** (via DeepEval integration)
+
+Based on the evaluation service code:
+
+- **Verifiability**: How easily the normalized claim can be fact-checked
+- **Check-Worthiness**: Importance and urgency of verifying this claim
+- **Factual Consistency**: Accuracy without distortion or hallucination
+- **Clarity**: Understandability and lack of ambiguity
+- **Relevance**: Connection to current events and public discourse
+
+## Batch Evaluation Workflow
+
+<Steps>
+  <Step title="Prepare Your Dataset">
+    Create a CSV or JSONL file with your claims:
+    
+    **CSV Template:**
+    ```csv
+    id,claim,reference
+    1,"Your noisy claim here","Reference normalization (optional)"
+    2,"Another claim...","Another reference..."
+    ```
+    
+    **Best Practices:**
+    - Include unique IDs for tracking
+    - Ensure claims are properly escaped (especially if they contain commas or quotes)
+    - Add reference normalizations for metric calculation
+    - Keep individual claims under 500 characters for optimal processing
+  </Step>
+  
+  <Step title="Upload Dataset">
+    Navigate to the Batch Evaluation section and upload your dataset file.
+    
+    **File Requirements:**
+    - Maximum file size: 10MB
+    - Supported formats: `.csv`, `.jsonl`
+    - UTF-8 encoding recommended
+    - Column headers required for CSV files
+    
+    The system validates your file structure and shows a preview before processing.
+  </Step>
+  
+  <Step title="Configure Evaluation Settings">
+    Select your evaluation parameters:
+    
+    **Model Selection:**
+    - Choose one or multiple AI models to compare
+    - Available models depend on your API key configuration
+    
+    **Prompting Strategy:**
+    - Zero-shot: Direct normalization
+    - Few-shot: Example-based learning
+    - Chain-of-Thought: Step-by-step reasoning
+    - Self-Refine: Iterative improvement
+    - Cross-Refine: Multi-model collaborative refinement
+    
+    **Evaluation Metrics:**
+    - METEOR scoring (default)
+    - Verifiability assessment
+    - Check-worthiness scoring
+    - Factual consistency check
+    - Clarity evaluation
+  </Step>
+  
+  <Step title="Monitor Progress">
+    Track real-time progress via WebSocket connection:
+    
+    **Progress Indicators:**
+    - Claims processed: `15/100`
+    - Current model: `GPT-4o-mini`
+    - Estimated time remaining
+    - Current claim being processed
+    
+    **WebSocket Updates:**
+    ```json
+    {
+      "type": "progress",
+      "processed": 15,
+      "total": 100,
+      "current_claim": "Scientists say coffee causes cancer",
+      "model": "gpt-4o-mini"
+    }
+    ```
+    
+    <Note>
+    The WebSocket connection provides live updates without requiring page refreshes. You can leave the page and return - progress is saved on the server.
+    </Note>
+  </Step>
+  
+  <Step title="Review Results">
+    Once processing completes, review comprehensive results:
+    
+    **Results Dashboard:**
+    - Overall METEOR score
+    - Per-claim normalization results
+    - Metric breakdown by evaluation criteria
+    - Model comparison (if multiple models used)
+    - Detailed error reports for failed claims
+  </Step>
+  
+  <Step title="Download Results">
+    Export results in your preferred format:
+    
+    **CSV Export:**
+    ```csv
+    id,original_claim,normalized_claim,meteor_score,verifiability,model
+    1,"OMG the president...","The president made claims...",0.85,0.92,gpt-4o
+    ```
+    
+    **JSON Export:**
+    ```json
+    [
+      {
+        "id": 1,
+        "original_claim": "OMG the president...",
+        "normalized_claim": "The president made claims...",
+        "meteor_score": 0.85,
+        "metrics": {
+          "verifiability": 0.92,
+          "check_worthiness": 0.88,
+          "clarity": 0.95
+        },
+        "model": "gpt-4o"
+      }
+    ]
+    ```
+  </Step>
+</Steps>
+
+## Understanding Evaluation Metrics
+
+### METEOR Scoring
+
+METEOR (Metric for Evaluation of Translation with Explicit ORdering) is the primary quality metric:
+
+**Score Interpretation:**
+- **0.0 - 0.3**: Poor normalization, significant semantic drift
+- **0.3 - 0.5**: Moderate quality, captures some key information
+- **0.5 - 0.7**: Good normalization, preserves main claims
+- **0.7 - 0.9**: Excellent normalization, high semantic similarity
+- **0.9 - 1.0**: Near-perfect match with reference
+
+**What METEOR Measures:**
+- Unigram matching between normalized and reference text
+- Synonym and stemming alignment
+- Word order preservation
+- Penalty for fragmentation
+
+### DeepEval Metrics
+
+The evaluation service uses G-Eval metrics for comprehensive assessment:
+
+**Verifiability (0.0 - 1.0)**
+
+Evaluates how easily the claim can be fact-checked:
+- Contains specific, factual assertions
+- Evidence can be found to support/refute
+- Not overly vague or opinion-based
+- Includes relevant time/location context
+
+**Check-Worthiness (0.0 - 1.0)**
+
+Assesses importance of fact-checking this claim:
+- Potential harm if false
+- Reach and influence potential
+- Public interest level
+- Impact on vulnerable populations
+
+**Factual Consistency (0.0 - 1.0)**
+
+Checks accuracy and faithfulness:
+- No hallucinated information
+- Maintains original context
+- Doesn't misrepresent source
+- Avoids introducing new claims
+
+**Clarity (0.0 - 1.0)**
+
+Measures understandability:
+- Clear, simple language
+- Lacks ambiguous terms
+- Self-contained statement
+- Concise yet comprehensive
+
+## Model Comparison
+
+When evaluating with multiple models, the results dashboard provides:
+
+**Side-by-Side Comparison Table:**
+
+| Claim | GPT-4o | Claude Opus | Gemini Pro | Best METEOR |
+|-------|--------|-------------|------------|-------------|
+| "OMG the president..." | 0.85 | 0.88 | 0.82 | Claude Opus |
+| "Scientists say coffee..." | 0.79 | 0.81 | 0.84 | Gemini Pro |
+
+**Aggregate Statistics:**
+- Average METEOR score per model
+- Consistency across claims
+- Processing time per model
+- Cost per model (based on token usage)
+
+<Tip>
+Use model comparison to identify which AI performs best for your specific domain or claim types. Some models excel at political claims, others at scientific claims.
+</Tip>
+
+## API Integration
+
+For programmatic access to batch evaluation:
+
+```python
+import requests
+
+# Upload dataset
+files = {'file': open('claims.csv', 'rb')}
+response = requests.post(
+    'https://api.checkthat.ai/batch/upload',
+    files=files,
+    headers={'Authorization': f'Bearer {api_key}'}
+)
+
+batch_id = response.json()['batch_id']
+
+# Start evaluation
+config = {
+    'models': ['gpt-4o', 'claude-opus-4'],
+    'strategy': 'zero-shot',
+    'metrics': ['meteor', 'verifiability']
+}
+requests.post(
+    f'https://api.checkthat.ai/batch/{batch_id}/evaluate',
+    json=config,
+    headers={'Authorization': f'Bearer {api_key}'}
+)
+
+# Monitor via WebSocket
+import websocket
+
+ws = websocket.create_connection(
+    f'wss://api.checkthat.ai/batch/{batch_id}/progress'
+)
+
+while True:
+    result = ws.recv()
+    print(result)
+    if 'completed' in result:
+        break
+```
+
+## Best Practices
+
+### Dataset Preparation
+
+1. **Clean your data**: Remove duplicates and invalid entries
+2. **Balance your dataset**: Include diverse claim types
+3. **Add quality references**: Better references = more accurate metrics
+4. **Test with small batches**: Validate with 10-20 claims first
+
+### Model Selection
+
+1. **Start with mid-tier models**: Test with GPT-4o-mini or Claude Sonnet
+2. **Use premium for final runs**: Reserve GPT-5/Opus 4.1 for production
+3. **Compare 2-3 models**: Find the best fit for your use case
+4. **Consider cost vs quality**: Balance budget with accuracy needs
+
+### Optimization
+
+1. **Batch size**: Keep batches under 1000 claims for manageable processing
+2. **Concurrent processing**: The system automatically parallelizes when possible
+3. **Error handling**: Failed claims are retried automatically (up to 3 attempts)
+4. **Rate limits**: Respect API rate limits by spacing requests
+
+## Troubleshooting
+
+### Upload Errors
+
+**"Invalid CSV format"**
+- Ensure proper CSV structure with headers
+- Check for unescaped quotes or commas
+- Verify UTF-8 encoding
+
+**"File too large"**
+- Split dataset into multiple files (max 10MB each)
+- Remove unnecessary columns
+- Use JSONL for more efficient storage
+
+### Processing Issues
+
+**"Timeout on claim processing"**
+- Extremely long claims may timeout
+- Break very long posts into multiple claims
+- Consider using a more powerful model
+
+**"Low METEOR scores across all claims"**
+- Check if references are too different from your normalization style
+- Verify references are actual normalizations, not original claims
+- Consider if your prompting strategy needs adjustment
+
+## Next Steps
+
+- Learn about [Claim Normalization Strategies(/guides/prompting-strategies)
+- Explore [Evaluation Metrics(/concepts/evaluation-metrics) in detail
+- Try [Interactive Chat](/webapp/chat-interface) for single claim testing
+- Review [API Documentation(/api/overview) for programmatic access

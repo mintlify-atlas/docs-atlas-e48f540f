@@ -1,0 +1,268 @@
+---
+title: 'API Overview'
+description: 'Introduction to CheckThat AI API for claim normalization and fact-checking'
+---
+
+## Introduction
+
+Welcome to the CheckThat AI API - an advanced platform for claim normalization, fact-checking, and LLM output evaluation. Our API provides OpenAI-compatible endpoints with enhanced features for improving the accuracy and reliability of AI-generated claims.
+
+## Base URL
+
+```
+https://api.checkthat-ai.com
+```
+
+For local development:
+```
+http://localhost:8000
+```
+
+## API Endpoints
+
+CheckThat AI provides several categories of endpoints:
+
+### Chat Endpoints
+- `POST /chat` - Real-time chat interface for claim normalization
+- `POST /v1/chat/completions` - OpenAI-compatible chat completions with CheckThat AI enhancements
+
+### Model Endpoints
+- `GET /v1/models` - List all available LLM models across providers
+
+### Health Endpoints
+- `GET /` - Root endpoint with API information
+- `GET /health` - Health check endpoint
+
+## Supported LLM Providers
+
+CheckThat AI supports multiple LLM providers:
+
+<CardGroup cols={3}>
+  <Card title="OpenAI" icon="openai">
+    GPT-5, GPT-5 nano, o3, o4-mini
+  </Card>
+  <Card title="Anthropic" icon="message-bot">
+    Claude Sonnet 4, Claude Opus 4.1
+  </Card>
+  <Card title="Google" icon="google">
+    Gemini 2.5 Pro, Gemini 2.5 Flash
+  </Card>
+  <Card title="xAI" icon="x-twitter">
+    Grok 3, Grok 4, Grok 3 Mini
+  </Card>
+  <Card title="Together AI" icon="server">
+    Llama 3.3 70B, DeepSeek R1
+  </Card>
+</CardGroup>
+
+## Rate Limiting
+
+To ensure fair usage and service availability, CheckThat AI implements rate limiting:
+
+<ParamField path="Rate Limits" type="object">
+  <Expandable title="details">
+    <ResponseField name="/chat" type="number">
+      10 requests per 60 seconds per IP address
+    </ResponseField>
+    <ResponseField name="/v1/*" type="number">
+      10 requests per 60 seconds per IP address (Public API)
+    </ResponseField>
+    <ResponseField name="Other POST endpoints" type="number">
+      10 requests per 60 seconds per IP address
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+### Rate Limit Headers
+
+All responses include rate limit information:
+
+```http
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 9
+X-RateLimit-Reset: 1709567890
+```
+
+### Rate Limit Exceeded Response
+
+When rate limit is exceeded, you'll receive a `429` status code:
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "You've exceeded the rate limit for Chat endpoints. Please wait 45 seconds before trying again.",
+  "details": {
+    "limit": "10 requests per 60 seconds",
+    "retry_after": 45,
+    "endpoint": "/chat",
+    "client_ip": "192.168.1.1"
+  },
+  "help": "This helps us keep the service available for everyone."
+}
+```
+
+## Response Format
+
+All API responses follow standard formats:
+
+### Success Response
+
+Successful requests return appropriate data based on the endpoint, typically following OpenAI's response structure for compatibility.
+
+### Error Response
+
+Error responses include detailed information:
+
+```json
+{
+  "error": "Error Type",
+  "message": "Human-readable error message",
+  "details": {
+    "field": "Additional context"
+  },
+  "type": "error_category"
+}
+```
+
+### HTTP Status Codes
+
+<ResponseField name="200" type="OK">
+  Request successful
+</ResponseField>
+
+<ResponseField name="400" type="Bad Request">
+  Invalid request parameters or malformed JSON
+</ResponseField>
+
+<ResponseField name="401" type="Unauthorized">
+  Missing or invalid API key/authentication token
+</ResponseField>
+
+<ResponseField name="403" type="Forbidden">
+  Authentication valid but insufficient permissions
+</ResponseField>
+
+<ResponseField name="422" type="Unprocessable Entity">
+  Request validation failed
+</ResponseField>
+
+<ResponseField name="429" type="Too Many Requests">
+  Rate limit exceeded
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  Unexpected server error occurred
+</ResponseField>
+
+## Getting Started
+
+### 1. Choose Your Authentication Method
+
+CheckThat AI supports two authentication approaches:
+- **API Key Authentication** - Use your OpenAI/Anthropic/etc. API key directly
+- **Bearer Token Authentication** - For `/v1/chat/completions` endpoint
+
+See the [Authentication](/api/authentication) page for details.
+
+### 2. Make Your First Request
+
+Simple chat request:
+
+```bash
+curl -X POST https://api.checkthat-ai.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_query": "The Earth is flat and the moon landing was faked.",
+    "model": "gpt-4o",
+    "api_key": "sk-..."
+  }'
+```
+
+### 3. Explore Advanced Features
+
+CheckThat AI offers enhanced features beyond standard LLM APIs:
+
+- **Claim Refinement** - Automatically improve claim quality through iterative evaluation
+- **Post-Normalization Evaluation** - Assess output quality with custom metrics
+- **Multi-Provider Support** - Seamlessly switch between LLM providers
+- **Streaming Support** - Real-time response streaming
+
+## CORS Configuration
+
+The API implements endpoint-specific CORS policies:
+
+### Public API Endpoints (`/v1/*`)
+- Accepts requests from all origins (`*`)
+- Suitable for client-side applications
+
+### Restricted Endpoints (`/chat`)
+- Limited to specific domains:
+  - `https://www.checkthat-ai.com`
+  - `https://checkthat-ai.com`
+  - `https://nikhil-kadapala.github.io`
+
+## API Versioning
+
+The current API version is **v1.0.0**. Version information is included in all responses:
+
+```bash
+curl https://api.checkthat-ai.com/
+```
+
+```json
+{
+  "message": "This is the CheckThat AI backend root API endpoint...",
+  "version": "1.0.0"
+}
+```
+
+## SDKs and Libraries
+
+CheckThat AI is compatible with OpenAI SDKs:
+
+<CodeGroup>
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="your-api-key",
+    base_url="https://api.checkthat-ai.com/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Normalize this claim..."}]
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'your-api-key',
+  baseURL: 'https://api.checkthat-ai.com/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [{role: 'user', content: 'Normalize this claim...'}]
+});
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Learn how to authenticate your API requests
+  </Card>
+  <Card title="Chat Completions" icon="messages" href="/api/chat">
+    Create chat completions with CheckThat AI features
+  </Card>
+  <Card title="Health Checks" icon="heart-pulse" href="/api/health">
+    Monitor API health and availability
+  </Card>
+  <Card title="Batch Processing" icon="layer-group" href="/api/batch-processing">
+    Process multiple claims efficiently
+  </Card>
+</CardGroup>

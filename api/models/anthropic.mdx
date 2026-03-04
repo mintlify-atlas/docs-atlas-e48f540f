@@ -1,0 +1,287 @@
+---
+title: "Anthropic Models"
+description: "Use Anthropic's Claude models with CheckThat API"
+---
+
+## Overview
+
+CheckThat integrates with Anthropic's Claude models, providing access to advanced AI capabilities with strong reasoning, analysis, and conversation abilities. Claude models excel at nuanced understanding, detailed explanations, and maintaining context across long conversations.
+
+## Available Models
+
+The following Claude models are available through CheckThat:
+
+<ParamField path="claude-sonnet-4-20250514" type="string">
+  **Claude Sonnet 4** - Balanced performance with excellent reasoning capabilities and speed
+</ParamField>
+
+<ParamField path="claude-opus-4-1-20250805" type="string">
+  **Claude Opus 4.1** - Most capable Claude model with superior performance on complex tasks
+</ParamField>
+
+## Configuration
+
+### API Key Setup
+
+<ParamField path="api_key" type="string" required>
+  Your Anthropic API key. Get your key from [Anthropic Console](https://console.anthropic.com/).
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The model identifier from the available models list above.
+</ParamField>
+
+### Request Parameters
+
+<ParamField path="system" type="string">
+  System prompt that sets the assistant's behavior and context.
+</ParamField>
+
+<ParamField path="messages" type="array" required>
+  Array of message objects. Must alternate between `user` and `assistant` roles.
+  ```json
+  [
+    {"role": "user", "content": "Hello!"},
+    {"role": "assistant", "content": "Hi! How can I help?"},
+    {"role": "user", "content": "Tell me about AI."}
+  ]
+  ```
+</ParamField>
+
+<ParamField path="max_tokens" type="integer" default="8192">
+  Maximum number of tokens to generate. Claude models default to 8192 tokens.
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Controls randomness in responses. Range: 0.0 to 1.0.
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Enable streaming responses for real-time output.
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Completion
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "claude-sonnet-4-20250514",
+    "provider": "anthropic",
+    "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Explain the concept of neural networks."}
+    ],
+    "system_prompt": "You are an expert AI educator who explains complex topics clearly."
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Streaming Response
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "claude-opus-4-1-20250805",
+    "provider": "anthropic",
+    "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Write a detailed analysis of renewable energy trends."}
+    ],
+    "stream": True
+}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as response:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode('utf-8'))
+```
+
+### Multi-turn Conversation
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "claude-sonnet-4-20250514",
+    "provider": "anthropic",
+    "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
+    "messages": [
+        {"role": "user", "content": "What are the main types of machine learning?"},
+        {"role": "assistant", "content": "The three main types are: supervised learning, unsupervised learning, and reinforcement learning."},
+        {"role": "user", "content": "Can you explain supervised learning in detail?"}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Structured Output (Limited Support)
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+# Note: Anthropic structured outputs currently use instructor library
+# and support Pydantic models only (not JSON schema)
+payload = {
+    "model": "claude-sonnet-4-20250514",
+    "provider": "anthropic",
+    "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Analyze this claim: 'Electric vehicles reduce carbon emissions.'"}
+    ],
+    "system_prompt": "You are a fact-checker. Analyze claims and provide structured responses."
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+## Features and Capabilities
+
+### Long Context Window
+
+Claude models support extensive context windows, making them ideal for:
+- Long document analysis
+- Extended conversations
+- Multi-turn dialogues with rich history
+
+### Conversation History Management
+
+CheckThat automatically formats conversation history for Anthropic's API (`anthropic.py:38-42`):
+- Alternates user/assistant messages correctly
+- Extracts system instructions properly
+- Maintains conversation context across turns
+
+### Streaming Support
+
+Real-time streaming with Anthropic's native streaming API (`anthropic.py:69-74`):
+```python
+with client.messages.stream(
+    max_tokens=8192,
+    model=model,
+    system=system_instruction,
+    messages=messages,
+) as stream:
+    for text in stream.text_stream:
+        yield text
+```
+
+### OpenAI-Compatible Response Format
+
+CheckThat transforms Anthropic responses to OpenAI-compatible format (`anthropic.py:131-278`), including:
+- Standard message structure
+- Usage statistics (prompt_tokens, completion_tokens)
+- Finish reason mapping
+- Stop sequence handling
+
+## Structured Outputs
+
+### Current Limitations
+
+Anthropic structured outputs in CheckThat have limited support:
+
+- **Pydantic models only**: Currently supports Pydantic model formats via instructor library
+- **No JSON schema**: Dict-based JSON schema formats not yet supported
+- **Error handling**: Returns 400 error for unsupported formats
+
+**Supported:**
+- claude-sonnet-4-20250514 (with Pydantic models)
+
+**Implementation** (`anthropic.py:81-129`):
+```python
+if isinstance(response_format, dict):
+    raise HTTPException(
+        status_code=400, 
+        detail="Anthropic provider currently only supports Pydantic model response formats"
+    )
+```
+
+## Implementation Details
+
+CheckThat's Anthropic integration (`anthropic.py:21-279`) provides:
+
+- **Native Anthropic client**: Uses official `anthropic` Python SDK
+- **Instructor integration**: Structured outputs via instructor library
+- **Response transformation**: Converts to OpenAI-compatible format
+- **Conversation formatting**: Automatic message formatting for Anthropic API
+
+### Response Format Transformation
+
+The `_format_to_openai_response` method ensures compatibility:
+- Extracts content from Anthropic's content blocks
+- Maps finish reasons (`end_turn` → `stop`, `max_tokens` → `length`)
+- Preserves usage metadata (input_tokens → prompt_tokens)
+- Adds Anthropic-specific extensions for debugging
+
+## Rate Limits and Pricing
+
+Rate limits and pricing are determined by your Anthropic API tier. CheckThat does not impose additional limits.
+
+Refer to [Anthropic's pricing page](https://anthropic.com/pricing) for current rates:
+- **Claude Sonnet 4**: Balanced pricing for production use
+- **Claude Opus 4.1**: Premium pricing for highest capability
+
+## Error Handling
+
+```python
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+except requests.exceptions.HTTPError as e:
+    if e.response.status_code == 400:
+        print(f"Bad request: {e.response.json()}")
+    elif e.response.status_code == 429:
+        print("Rate limit exceeded")
+    else:
+        print(f"API Error: {e}")
+except Exception as e:
+    print(f"Request failed: {e}")
+```
+
+Common error codes:
+- **400**: Invalid request or unsupported structured output format
+- **401**: Invalid API key
+- **429**: Rate limit exceeded
+- **500**: Anthropic service error
+
+## Best Practices
+
+1. **Use system prompts effectively**: Set clear context and behavior expectations
+2. **Alternate messages properly**: Ensure user/assistant message alternation
+3. **Leverage long context**: Claude excels at analyzing long documents
+4. **Stream for UX**: Enable streaming for better user experience
+5. **Handle max_tokens**: Default is 8192; adjust based on needs
+6. **Monitor usage**: Track token usage for cost optimization
+7. **Structured outputs**: Use Pydantic models when structured data is needed

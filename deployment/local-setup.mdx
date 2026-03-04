@@ -1,0 +1,416 @@
+---
+title: 'Local Development Setup'
+description: 'Complete guide to setting up CheckThat AI for local development'
+icon: 'laptop-code'
+---
+
+## Overview
+
+CheckThat AI can be set up for local development using automated scripts or manual configuration. The platform runs two services:
+
+- **Frontend**: React + TypeScript + Vite (Port 5173)
+- **Backend**: FastAPI + Python (Port 8000)
+
+## Prerequisites
+
+Before starting, ensure you have the following installed:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    Version 18 or higher required
+  </Card>
+  <Card title="Python" icon="python">
+    Version 3.8 or higher required
+  </Card>
+  <Card title="Git" icon="git">
+    For cloning the repository
+  </Card>
+  <Card title="API Keys" icon="key">
+    OpenAI, Anthropic, Gemini, or xAI
+  </Card>
+</CardGroup>
+
+## Option 1: Automated Setup (Recommended)
+
+The project includes automation scripts that handle the entire setup process automatically.
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2.git
+    cd clef2025-checkthat-lab-task2
+    ```
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Set up your API keys before running the setup script:
+
+    <CodeGroup>
+      ```bash Linux/macOS
+      export OPENAI_API_KEY="your-openai-key"
+      export ANTHROPIC_API_KEY="your-anthropic-key"
+      export GEMINI_API_KEY="your-gemini-key"
+      export GROK_API_KEY="your-grok-key"
+      ```
+
+      ```powershell Windows PowerShell
+      $env:OPENAI_API_KEY="your-openai-key"
+      $env:ANTHROPIC_API_KEY="your-anthropic-key"
+      $env:GEMINI_API_KEY="your-gemini-key"
+      $env:GROK_API_KEY="your-grok-key"
+      ```
+    </CodeGroup>
+
+    <Note>
+      You only need the API keys for the model providers you plan to use. At least one provider is required.
+    </Note>
+  </Step>
+
+  <Step title="Run Automated Setup">
+    Make the setup script executable and run it:
+
+    ```bash
+    chmod +x setup-project.sh
+    ./setup-project.sh
+    ```
+
+    The script will:
+    - ✅ Detect your operating system (Linux/macOS/Windows)
+    - ✅ Terminate conflicting processes on port 5173
+    - ✅ Install Node.js dependencies for the frontend
+    - ✅ Fix npm security vulnerabilities automatically
+    - ✅ Create Python virtual environment
+    - ✅ Install Python dependencies using `uv` (faster) or `pip`
+    - ✅ Handle cross-platform compatibility
+
+    <Note>
+      You only need to run this script once for initial setup.
+    </Note>
+  </Step>
+
+  <Step title="Start the Application">
+    After setup completes, start both services:
+
+    ```bash
+    chmod +x run-project.sh
+    ./run-project.sh
+    ```
+
+    The application will start:
+    - Frontend: `http://localhost:5173`
+    - Backend: `http://localhost:8000`
+
+    <Info>
+      The script displays process IDs for monitoring. Press `Ctrl+C` to gracefully shut down both services.
+    </Info>
+  </Step>
+
+  <Step title="Access the Application">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost:5173
+    ```
+
+    The API documentation is available at:
+
+    ```
+    http://localhost:8000/docs
+    ```
+  </Step>
+</Steps>
+
+### What the Scripts Do
+
+#### setup-project.sh
+
+<AccordionGroup>
+  <Accordion title="Port Management">
+    Automatically detects and terminates conflicting processes on port 5173 using platform-specific commands:
+    - **Linux/macOS**: Uses `lsof` or `ss` to identify and kill processes
+    - **Windows**: Uses `netstat` and `taskkill` commands
+  </Accordion>
+
+  <Accordion title="Frontend Setup">
+    - Clears npm cache to avoid conflicts
+    - Installs all Node.js dependencies in `src/app`
+    - Runs `npm audit fix` to address security vulnerabilities
+    - Replaces deprecated `@esbuild-kit` packages with `tsx`
+  </Accordion>
+
+  <Accordion title="Backend Setup">
+    - Installs `uv` for faster Python package management
+    - Creates Python virtual environment in `.venv`
+    - Activates virtual environment (platform-specific paths)
+    - Installs Python dependencies from `requirements.txt`
+    - Falls back to standard `pip` if `uv` fails
+  </Accordion>
+</AccordionGroup>
+
+#### run-project.sh
+
+<AccordionGroup>
+  <Accordion title="Process Management">
+    - Checks for and terminates existing processes on port 5173
+    - Starts frontend with `npm run dev` in background
+    - Starts backend with `fastapi dev main.py --host 0.0.0.0 --port 8000`
+    - Stores process IDs for cleanup on exit
+  </Accordion>
+
+  <Accordion title="Graceful Shutdown">
+    - Traps `Ctrl+C` signal for clean shutdown
+    - Terminates both frontend and backend processes
+    - Ensures no orphaned processes remain
+  </Accordion>
+</AccordionGroup>
+
+## Option 2: Manual Setup
+
+If you prefer manual setup or encounter issues with the automated scripts:
+
+<Steps>
+  <Step title="Clone Repository">
+    ```bash
+    git clone https://github.com/nikhil-kadapala/clef2025-checkthat-lab-task2.git
+    cd clef2025-checkthat-lab-task2
+    ```
+  </Step>
+
+  <Step title="Set Up Backend">
+    Create and activate a Python virtual environment:
+
+    <CodeGroup>
+      ```bash Linux/macOS
+      python -m venv .venv
+      source .venv/bin/activate
+      pip install -r requirements.txt
+      ```
+
+      ```powershell Windows
+      python -m venv .venv
+      .venv\Scripts\activate
+      pip install -r requirements.txt
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Set Up Frontend">
+    Install Node.js dependencies:
+
+    ```bash
+    cd src/app
+    npm install
+    cd ../..
+    ```
+  </Step>
+
+  <Step title="Configure Environment">
+    Export your API keys (see Option 1, Step 2 for commands)
+  </Step>
+
+  <Step title="Start Services">
+    Open two terminal windows:
+
+    <CodeGroup>
+      ```bash Terminal 1: Backend
+      cd src/api
+      source ../../.venv/bin/activate  # Linux/macOS
+      # .venv\Scripts\activate  # Windows
+      fastapi dev main.py --host 0.0.0.0 --port 8000
+      ```
+
+      ```bash Terminal 2: Frontend
+      cd src/app
+      npm run dev
+      ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+## Port Configuration
+
+The application uses the following ports by default:
+
+| Service | Port | URL |
+|---------|------|---------|
+| Frontend | 5173 | http://localhost:5173 |
+| Backend API | 8000 | http://localhost:8000 |
+| API Docs | 8000 | http://localhost:8000/docs |
+
+<Warning>
+  If ports 5173 or 8000 are already in use, you'll need to either:
+  - Stop the conflicting service
+  - Modify the port configuration in `vite.config.ts` (frontend) or `main.py` (backend)
+</Warning>
+
+## Troubleshooting
+
+### Permission Denied on Scripts
+
+If you get a permission error when running the scripts:
+
+```bash
+chmod +x setup-project.sh run-project.sh
+```
+
+### Windows Script Execution
+
+On Windows, use Git Bash or WSL to run the shell scripts:
+
+<CodeGroup>
+  ```bash Git Bash
+  bash setup-project.sh
+  bash run-project.sh
+  ```
+
+  ```bash WSL
+  wsl --install  # If WSL not installed
+  wsl
+  bash setup-project.sh
+  ```
+</CodeGroup>
+
+### Port Already in Use
+
+The scripts automatically handle port conflicts, but if you still encounter issues:
+
+<CodeGroup>
+  ```bash Linux/macOS: Kill Port 5173
+  lsof -ti:5173 | xargs kill -9
+  ```
+
+  ```bash Linux/macOS: Kill Port 8000
+  lsof -ti:8000 | xargs kill -9
+  ```
+
+  ```powershell Windows: Kill Port 5173
+  netstat -ano | findstr :5173
+  taskkill /PID <PID> /F
+  ```
+
+  ```powershell Windows: Kill Port 8000
+  netstat -ano | findstr :8000
+  taskkill /PID <PID> /F
+  ```
+</CodeGroup>
+
+### API Keys Not Working
+
+<AccordionGroup>
+  <Accordion title="Check Environment Variables">
+    Verify your API keys are set correctly:
+
+    ```bash
+    echo $OPENAI_API_KEY
+    echo $ANTHROPIC_API_KEY
+    ```
+
+    If empty, re-export them before running the scripts.
+  </Accordion>
+
+  <Accordion title="Verify API Key Format">
+    Ensure there are no extra spaces or quotes in your API keys:
+    - ✅ Correct: `export OPENAI_API_KEY=sk-proj-...`
+    - ❌ Wrong: `export OPENAI_API_KEY="sk-proj-..."` (extra quotes)
+  </Accordion>
+
+  <Accordion title="Check API Key Validity">
+    Test your API key directly with a curl command or the provider's dashboard to ensure it's valid and has sufficient quota.
+  </Accordion>
+</AccordionGroup>
+
+### Frontend Build Errors
+
+<AccordionGroup>
+  <Accordion title="Clear Node Modules">
+    ```bash
+    cd src/app
+    rm -rf node_modules package-lock.json
+    npm install
+    ```
+  </Accordion>
+
+  <Accordion title="Update Node.js">
+    Ensure you're using Node.js v18 or higher:
+
+    ```bash
+    node --version
+    ```
+
+    If outdated, download the latest version from [nodejs.org](https://nodejs.org/)
+  </Accordion>
+
+  <Accordion title="Update npm">
+    ```bash
+    npm install -g npm@latest
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Backend Import Errors
+
+<AccordionGroup>
+  <Accordion title="Activate Virtual Environment">
+    Ensure the virtual environment is activated:
+
+    ```bash
+    # You should see (.venv) in your prompt
+    which python  # Should point to .venv/bin/python
+    ```
+  </Accordion>
+
+  <Accordion title="Reinstall Dependencies">
+    ```bash
+    source .venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    ```
+  </Accordion>
+
+  <Accordion title="Check Python Version">
+    ```bash
+    python --version  # Should be 3.8 or higher
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### NLTK Data Missing
+
+If you encounter NLTK data errors when using METEOR scoring:
+
+```python
+import nltk
+nltk.download('wordnet')
+nltk.download('punkt')
+nltk.download('omw-1.4')
+```
+
+## Development Workflow
+
+Once set up, your typical development workflow:
+
+1. **Start Development**: Run `./run-project.sh`
+2. **Make Changes**: Edit files in `src/app` (frontend) or `src/api` (backend)
+3. **Hot Reload**: Both services automatically reload on file changes
+4. **Stop Services**: Press `Ctrl+C` in the terminal
+
+<Tip>
+  The frontend uses Vite's hot module replacement (HMR), so changes appear instantly without full page reloads.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="key" href="/deployment/environment-variables">
+    Configure API keys and settings
+  </Card>
+  <Card title="Production Deployment" icon="rocket" href="/deployment/production">
+    Deploy to production environments
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/chat">
+    Explore the API endpoints
+  </Card>
+  <Card title="Model Configuration" icon="brain" href="/guides/models">
+    Configure AI model providers
+  </Card>
+</CardGroup>

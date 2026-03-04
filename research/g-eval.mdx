@@ -1,0 +1,572 @@
+---
+title: "G-Eval Framework"
+description: "Understanding G-Eval for LLM-based evaluation and its implementation in CheckThat AI"
+---
+
+## What is G-Eval?
+
+G-Eval is a framework for evaluating natural language generation (NLG) outputs using large language models (LLMs) as evaluators. Unlike traditional metrics that rely on simple text matching, G-Eval leverages the reasoning capabilities of advanced AI models to assess quality across nuanced criteria.
+
+### Research Background
+
+<Info>
+  **Paper**: "G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment"
+  
+  **Authors**: Yang Liu, Dan Iter, Yichong Xu, Shuohang Wang, Ruochen Xu, Chenguang Zhu
+  
+  **Publication**: 2023
+  
+  **Key Innovation**: Using LLMs with chain-of-thought reasoning to evaluate text quality shows significantly higher correlation with human judgments than traditional metrics like BLEU or ROUGE.
+</Info>
+
+### Why G-Eval for Claim Normalization?
+
+Traditional metrics struggle with claim evaluation:
+
+| Metric | Limitation for Claims |
+|--------|----------------------|
+| **BLEU** | Focuses on n-gram overlap; misses semantic meaning |
+| **ROUGE** | Recall-oriented; doesn't assess verifiability |
+| **Exact Match** | Too strict; ignores valid paraphrasing |
+| **METEOR** | Better but still primarily surface-level matching |
+
+**G-Eval advantages**:
+- Understands semantic meaning
+- Evaluates nuanced criteria (verifiability, check-worthiness)
+- Provides explanatory feedback
+- Adapts to custom evaluation dimensions
+
+## G-Eval Framework Components
+
+The G-Eval framework consists of three core elements:
+
+### 1. Evaluation Criteria
+
+Human-readable descriptions of what to evaluate:
+
+```python
+criteria = """Evaluate the normalized claim against the following:
+- Verifiability: Can this be fact-checked with reliable sources?
+- Self-Containment: Is it understandable without extra context?
+- Clarity: Is the language clear and unambiguous?
+- Conciseness: Is it brief while preserving meaning?
+- Factual Consistency: Does it accurately represent the source?
+"""
+```
+
+### 2. Evaluation Steps
+
+Detailed instructions guiding the LLM's assessment:
+
+```python
+evaluation_steps = [
+    "Check if the claim contains verifiable factual assertions",
+    "Verify the claim is self-contained without additional context",
+    "Assess if the claim is written in clear language",
+    "Confirm the claim is concise yet comprehensive",
+    "Ensure factual consistency with source material"
+]
+```
+
+### 3. Evaluation Parameters
+
+The inputs provided to the evaluator:
+
+```python
+from deepeval.test_case import LLMTestCaseParams
+
+evaluation_params = [
+    LLMTestCaseParams.INPUT,          # Original post
+    LLMTestCaseParams.ACTUAL_OUTPUT   # Normalized claim
+]
+```
+
+Optional: `EXPECTED_OUTPUT` (reference claim), `RETRIEVAL_CONTEXT` (background info)
+
+## Implementation in CheckThat AI
+
+### DeepEval Integration
+
+CheckThat AI uses the DeepEval library's G-Eval implementation:
+
+```python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from deepeval.models import GPTModel, AnthropicModel, GeminiModel
+
+# Create evaluation model
+eval_model = GPTModel(
+    model="gpt-4o",
+    _openai_api_key="your-api-key"
+)
+
+# Define G-Eval metric
+metric = GEval(
+    name="Claim Quality Assessment",
+    criteria=STATIC_EVAL_SPECS.criteria,
+    evaluation_steps=STATIC_EVAL_SPECS.evaluation_steps,
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    model=eval_model,
+    threshold=0.5
+)
+
+# Create test case
+test_case = LLMTestCase(
+    input="Original social media post text...",
+    actual_output="Normalized claim text..."
+)
+
+# Run evaluation
+metric.measure(test_case)
+
+print(f"Score: {metric.score}")      # 0.0 to 1.0
+print(f"Reason: {metric.reason}")    # Explanatory feedback
+```
+
+**Source**: `/home/daytona/workspace/source/api/services/refinement/refine.py:76-108`
+
+### Static Evaluation Specification
+
+CheckThat AI defines standard criteria in `STATIC_EVAL_SPECS`:
+
+```python
+# From /api/types/evals.py:25-50
+
+STATIC_EVAL_SPECS = StaticEvaluation(
+    criteria="""Evaluate the normalized claim against the following 
+    criteria: Verifiability and Self-Containment, Claim Centrality 
+    and Extraction Quality, Conciseness and Clarity, Check-Worthiness 
+    Alignment, and Factual Consistency""",
+    
+    evaluation_steps=[
+        # Verifiability and Self-Containment
+        "Check if the claim contains verifiable factual assertions 
+         that can be independently checked",
+        "Check if the claim is self-contained without requiring 
+         additional context from the original post",
+        
+        # Claim Centrality and Extraction Quality
+        "Check if the normalized claim captures the central assertion 
+         from the source text while removing extraneous information",
+        "Check if the claim represents the core factual assertion 
+         that requires fact-checking, not peripheral details",
+        
+        # Conciseness and Clarity
+        "Check if the claim is presented in a straightforward, 
+         concise manner that fact-checkers can easily process",
+        "Check if the claim is significantly shorter than source 
+         posts while preserving essential meaning",
+        
+        # Check-Worthiness Alignment
+        "Check if the normalized claim meets check-worthiness 
+         standards for fact-verification",
+        "Check if the claim has general public interest, potential 
+         for harm, and likelihood of being false",
+        
+        # Factual Consistency
+        "Check if the normalized claim is factually consistent 
+         with the source material without hallucinations or distortions",
+        "Check if the claim accurately reflects the original 
+         assertion without introducing new information",
+    ]
+)
+```
+
+## Scoring Methodology
+
+### Score Range
+
+G-Eval produces scores from **0.0** to **1.0**:
+
+- **0.9-1.0**: Excellent quality, ready for fact-checking
+- **0.8-0.89**: High quality, minor improvements possible
+- **0.7-0.79**: Good quality, meets threshold
+- **0.6-0.69**: Acceptable but could be refined
+- **0.5-0.59**: Below threshold, refinement needed
+- **0.0-0.49**: Poor quality, significant issues
+
+### Threshold Configuration
+
+CheckThat AI uses configurable thresholds:
+
+```python
+# Default threshold
+default_threshold = 0.5
+
+# Refinement loop continues until:
+if metric.score >= threshold:
+    # Claim passes - no refinement needed
+    return final_claim
+else:
+    # Continue refinement
+    refined_claim = refine(claim, feedback)
+```
+
+**Adjustable via API**:
+```json
+{
+  "refine_threshold": 0.8,  // Higher threshold = stricter quality
+  "refine_max_iters": 3     // Maximum refinement attempts
+}
+```
+
+### Feedback Generation
+
+G-Eval provides explanatory reasoning:
+
+```python
+eval_result = metric.measure(test_case)
+
+# Example feedback
+feedback = eval_result.reason
+# "The claim is verifiable (8/10) and self-contained (7/10), 
+#  but could be more concise (5/10). The phrase 'according to 
+#  multiple sources' is vague and should specify the sources. 
+#  Clarity could improve by removing hedging language."
+```
+
+## Evaluation Criteria in Detail
+
+### 1. Verifiability and Self-Containment
+
+**Question**: Can this claim be fact-checked without additional context?
+
+<Note>
+  **High Score Example**:
+  "The FDA approved Pfizer's COVID-19 vaccine for ages 5-11 on October 29, 2021"
+  
+  ✅ Specific date, organization, and subject
+  ✅ Can be verified through FDA records
+  ✅ No external context needed
+</Note>
+
+<Note>
+  **Low Score Example**:
+  "They approved it last year"
+  
+  ❌ Who is "they"?
+  ❌ What is "it"?
+  ❌ Which "last year"?
+</Note>
+
+### 2. Claim Centrality and Extraction Quality
+
+**Question**: Does this capture the main claim and remove noise?
+
+**Original Post**:
+```
+OMG!! 😱 Did you know that eating chocolate 🍫 can 
+actually help you lose weight?!? Scientists at Oxford 
+found that dark chocolate boosts metabolism by 20%!! 
+I'm never dieting again lol 😂 #chocolate #health #science
+```
+
+**High Centrality**:
+```
+"Oxford scientists found dark chocolate boosts metabolism by 20%"
+```
+
+**Low Centrality**:
+```
+"Chocolate may have health benefits"
+```
+(Too vague, loses key details)
+
+### 3. Conciseness and Clarity
+
+**Question**: Is the claim brief and easy to understand?
+
+**Target**: ≤ 25 words, single sentence
+
+| Claim | Word Count | Clarity |
+|-------|-----------|--------|
+| "The COVID-19 pandemic began in Wuhan, China in late 2019" | 11 | ✅ Clear |
+| "It is widely believed by many scientists and researchers around the world that the origins of what we now call COVID-19 can be traced back to the city of Wuhan in China around the end of 2019" | 41 | ❌ Verbose |
+
+### 4. Check-Worthiness Alignment
+
+**Question**: Is this important enough to fact-check?
+
+**High Check-Worthiness**:
+- Health/medical claims
+- Political statements
+- Claims about public figures
+- Safety information
+- Financial advice
+
+**Low Check-Worthiness**:
+- Personal opinions
+- Obvious satire
+- Trivial facts
+- Already well-established information
+
+### 5. Factual Consistency
+
+**Question**: Does the claim faithfully represent the source without hallucination?
+
+<Info>
+  **Hallucination Example**:
+  
+  **Original**: "Some studies suggest coffee may reduce cancer risk"
+  
+  **Hallucinated Claim**: "Harvard Medical School confirms coffee prevents cancer"
+  
+  ❌ Added false specificity ("Harvard Medical School", "confirms", "prevents")
+</Info>
+
+## Multi-Metric Evaluation
+
+### Custom Evaluation Criteria
+
+You can define domain-specific metrics:
+
+```python
+from deepeval.metrics import GEval
+
+# Custom metric for scientific claims
+scientific_accuracy = GEval(
+    name="Scientific Accuracy Assessment",
+    criteria="""Evaluate whether the claim accurately 
+    represents scientific findings without overstatement""",
+    evaluation_steps=[
+        "Check if the claim distinguishes correlation from causation",
+        "Verify the claim doesn't overstate confidence (e.g., 'proves' vs 'suggests')",
+        "Assess if the claim acknowledges study limitations",
+        "Confirm the claim doesn't generalize beyond the study scope"
+    ],
+    evaluation_params=[INPUT, ACTUAL_OUTPUT],
+    model=eval_model,
+    threshold=0.7
+)
+```
+
+### Combining Multiple Metrics
+
+Evaluate claims across different dimensions:
+
+```python
+metrics = [
+    verifiability_metric,
+    check_worthiness_metric,
+    clarity_metric,
+    scientific_accuracy_metric
+]
+
+for metric in metrics:
+    metric.measure(test_case)
+    print(f"{metric.name}: {metric.score}")
+
+# Calculate weighted average
+weights = [0.3, 0.3, 0.2, 0.2]
+overall_score = sum(m.score * w for m, w in zip(metrics, weights))
+```
+
+## Refinement Integration
+
+### Feedback-Driven Refinement
+
+G-Eval feedback guides claim improvement:
+
+```python
+def refine_with_feedback(
+    original_post: str,
+    current_claim: str,
+    eval_feedback: str
+) -> str:
+    """
+    Use G-Eval feedback to refine the claim.
+    """
+    refine_prompt = f"""
+    ## Original Post
+    {original_post}
+    
+    ## Current Normalized Claim
+    {current_claim}
+    
+    ## Feedback from Quality Assessment
+    {eval_feedback}
+    
+    ## Task
+    Refine the normalized claim based on the feedback to improve:
+    - Verifiability and self-containment
+    - Centrality and extraction quality  
+    - Conciseness and clarity
+    - Check-worthiness alignment
+    - Factual consistency
+    
+    Return only the refined claim, nothing else.
+    """
+    
+    refined = model.generate(refine_prompt)
+    return refined
+```
+
+**Implementation**: `/api/services/refinement/refine.py:116-133`
+
+### Convergence Detection
+
+Stop refinement when improvements plateau:
+
+```python
+refinement_history = []
+for i in range(max_iters):
+    score = evaluate(current_claim)
+    
+    refinement_history.append({
+        "iteration": i,
+        "score": score,
+        "claim": current_claim
+    })
+    
+    # Check for convergence
+    if score >= threshold:
+        break
+    
+    # Check if improvement is minimal
+    if i > 0 and abs(score - refinement_history[i-1]["score"]) < 0.05:
+        break  # Diminishing returns
+    
+    current_claim = refine(current_claim, feedback)
+```
+
+## DeepEval Model Support
+
+CheckThat AI supports multiple evaluation models:
+
+### Supported Providers
+
+```python
+# From /api/_utils/deepeval_model.py
+
+class DeepEvalModel:
+    def getEvalModel(self):
+        if self.api_provider == 'OPENAI':
+            return GPTModel(
+                model=self.model,
+                _openai_api_key=self.api_key
+            )
+        elif self.api_provider == 'ANTHROPIC':
+            return AnthropicModel(
+                model=self.model,
+                _anthropic_api_key=self.api_key
+            )
+        elif self.api_provider == 'GEMINI':
+            return GeminiModel(
+                model=self.model,
+                api_key=self.api_key
+            )
+        elif self.api_provider == 'XAI':
+            return GrokModel(
+                model=self.model,
+                api_key=self.api_key
+            )
+```
+
+### Model Selection
+
+| Model | Best For | Cost |
+|-------|----------|------|
+| **GPT-4o** | Highest accuracy, nuanced evaluation | $$$ |
+| **Claude 3.7 Sonnet** | Balanced accuracy and speed | $$ |
+| **Gemini 2.5 Flash** | Fast evaluation, lower cost | $ |
+| **Grok 3** | Alternative perspective | $$ |
+
+## Performance Considerations
+
+### Latency
+
+G-Eval evaluation requires LLM inference:
+
+- **Single evaluation**: 3-8 seconds
+- **With refinement** (3 iterations): 15-40 seconds total
+- **Batch processing**: Use parallel requests
+
+### Cost Optimization
+
+<Info>
+  **Cost-Saving Strategies**:
+  
+  1. **Use smaller models for evaluation**: Gemini Flash is 10x cheaper than GPT-4
+  2. **Cache evaluations**: Store scores for identical inputs
+  3. **Selective refinement**: Only refine claims below threshold
+  4. **Early stopping**: Terminate when score improvement < 0.05
+  5. **Batch evaluation**: Process multiple claims in parallel
+</Info>
+
+### Reliability
+
+G-Eval is non-deterministic (LLM-based):
+
+```python
+# Reduce variance with lower temperature
+eval_model = GPTModel(
+    model="gpt-4o",
+    temperature=0.1,  # Lower = more consistent
+    _openai_api_key=api_key
+)
+```
+
+## Comparison with METEOR
+
+Both metrics are used in CheckThat AI:
+
+| Aspect | G-Eval | METEOR |
+|--------|--------|--------|
+| **Type** | LLM-based semantic evaluation | Statistical n-gram matching |
+| **Requires Reference** | No | Yes |
+| **Evaluation Depth** | Nuanced, multi-dimensional | Surface-level similarity |
+| **Speed** | Slow (LLM inference) | Fast (algorithmic) |
+| **Cost** | API costs | Free |
+| **Use Case** | Development, refinement | Competition scoring |
+| **Feedback** | Explanatory reasoning | Numeric score only |
+
+See [METEOR Scoring](/research/meteor-scoring) for comparison details.
+
+## Best Practices
+
+### Writing Effective Criteria
+
+<Note>
+  **Good Criteria**:
+  - Specific and measurable
+  - Aligned with task goals
+  - Understandable to LLMs
+  - Focused on observable properties
+  
+  **Poor Criteria**:
+  - Vague or subjective ("high quality")
+  - Conflicting objectives
+  - Requires external knowledge
+  - Too many dimensions at once
+</Note>
+
+### Debugging Low Scores
+
+If claims consistently score low:
+
+1. **Review criteria**: Are they too strict?
+2. **Check examples**: Do high-scoring examples meet your needs?
+3. **Inspect feedback**: What specific issues are flagged?
+4. **Adjust threshold**: Is 0.5 appropriate for your use case?
+5. **Test different models**: Try Claude or Gemini as evaluators
+
+## References
+
+### Academic Papers
+
+- **G-Eval Paper**: Liu et al., "G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment" (2023)
+- **DeepEval**: Confident AI's evaluation framework documentation
+- **LLM-as-Judge**: "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena" (Zheng et al., 2023)
+
+### Implementation Files
+
+- **Refinement Service**: `/api/services/refinement/refine.py`
+- **Evaluation Specs**: `/api/types/evals.py`
+- **DeepEval Wrapper**: `/api/_utils/deepeval_model.py`
+
+### Related Documentation
+
+- [Fact-Checking Pipeline](/research/fact-checking)
+- [METEOR Scoring](/research/meteor-scoring)
+- [DeepEval Integration](/research/deepeval-integration)
+- [Claim Detection](/research/claim-detection)

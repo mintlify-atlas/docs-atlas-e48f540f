@@ -1,0 +1,429 @@
+---
+title: 'Authentication'
+description: 'Sign in with Google OAuth or continue as a guest to access CheckThat AI'
+icon: 'lock'
+---
+
+CheckThat AI offers flexible authentication options: sign in with Google for full access, or continue as a guest to try the platform with free models.
+
+## Authentication Options
+
+### Guest Mode
+
+Start using CheckThat AI immediately without any sign-in:
+
+**Features:**
+- Access to free Llama 3.3 70B model
+- Instant access - no registration required
+- No conversation history saved
+- Single-message context (no multi-turn memory)
+- No file upload capabilities
+
+**When to use Guest Mode:**
+- Quick testing and exploration
+- One-off claim normalizations
+- Trying the platform before committing
+- Privacy-focused usage (no account tracking)
+
+<Note>
+Guest sessions are stored locally in your browser and will be lost if you clear your browser data. For persistent access, consider signing in.
+</Note>
+
+### Google OAuth Sign-In
+
+Sign in with your Google account for the full CheckThat AI experience:
+
+**Features:**
+- Access to premium AI models (GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, Grok 4)
+- Conversation history saved to your account
+- Multi-turn context maintained automatically
+- File upload and document analysis
+- API key management via Google Drive
+- Advanced conversation branching
+- Cross-device synchronization
+
+**What we access:**
+- Google Drive (for secure API key storage)
+- Basic profile information (name, email, profile picture)
+- OpenID for authentication
+
+<Warning>
+CheckThat AI uses Supabase for authentication and securely stores your API keys in your Google Drive. We never store your API keys on our servers - they remain in your control.
+</Warning>
+
+## Signing In
+
+<Steps>
+  <Step title="Navigate to CheckThat AI">
+    Visit [checkthat.ai](https://nikhil-kadapala.github.io/clef2025-checkthat-lab-task2/)
+    
+    You'll see the homepage with two options:
+    - **"Continue with Google"** - Full authenticated access
+    - **"Continue as Guest"** - Immediate free access
+  </Step>
+  
+  <Step title="Choose Authentication Method">
+    **For Guest Access:**
+    - Click "Continue as Guest"
+    - You'll be immediately redirected to the chat interface
+    - The free Llama 3.3 70B model will be pre-selected
+    
+    **For Google Sign-In:**
+    - Click "Continue with Google"
+    - You'll be redirected to Google's OAuth consent screen
+  </Step>
+  
+  <Step title="Authorize Google Permissions">
+    Google will ask for the following permissions:
+    
+    **Required Scopes:**
+    - **OpenID**: Basic authentication
+    - **Profile**: Your name and profile picture
+    - **Email**: Your email address
+    - **Google Drive (File Access)**: To store/retrieve your API keys securely
+    
+    Click "Allow" to grant these permissions.
+    
+    <Note>
+    We only access specific files we create in your Google Drive. We cannot see or access your other Drive files.
+    </Note>
+  </Step>
+  
+  <Step title="Complete Authentication">
+    After authorizing:
+    - You'll be redirected back to CheckThat AI
+    - The system creates your user profile in Supabase
+    - Your Google Drive tokens are synced for API key storage
+    - You're automatically logged in and redirected to the chat interface
+    
+    First-time users see a welcome message with setup instructions.
+  </Step>
+</Steps>
+
+## Session Management
+
+### Authenticated Sessions
+
+**Session Storage:**
+- Supabase manages authentication tokens
+- Tokens stored securely in browser localStorage
+- Sessions persist across browser tabs
+- Auto-refresh tokens extend your session automatically
+
+**Session Duration:**
+- Sessions last 7 days by default
+- Auto-refresh extends sessions while actively using the app
+- Manual logout clears all session data immediately
+
+**Security Features:**
+- JWT tokens for API authentication
+- HTTPS-only communication
+- Secure token refresh mechanism
+- No API keys stored in session data
+
+### Guest Sessions
+
+**Session Creation:**
+```javascript
+// Guest session structure
+{
+  id: "guest_1234567890",
+  sessionId: "guest_1234567890",
+  firstName: "Guest",
+  lastName: "User",
+  isGuest: true
+}
+```
+
+**Storage:**
+- Stored in browser localStorage under `guest_session` key
+- Unique session ID generated per browser
+- No server-side session storage
+- Cleared when you sign in with Google
+
+<Warning>
+Guest conversations are not saved between sessions. If you close your browser or clear localStorage, your chat history will be lost.
+</Warning>
+
+## Switching Between Guest and Authenticated
+
+### Upgrading from Guest to Authenticated
+
+<Steps>
+  <Step title="Open User Menu">
+    While in guest mode, click the user avatar in the bottom-left sidebar.
+  </Step>
+  
+  <Step title="Click Log In">
+    Select "Log in" from the dropdown menu.
+  </Step>
+  
+  <Step title="Sign In with Google">
+    Complete the Google OAuth flow as described above.
+  </Step>
+  
+  <Step title="Guest Session Cleared">
+    Upon successful sign-in:
+    - Guest session is automatically cleared
+    - Guest conversations are lost (not migrated)
+    - You start fresh with your authenticated account
+    - You now have access to premium models and features
+  </Step>
+</Steps>
+
+<Note>
+Currently, guest conversations cannot be migrated to authenticated accounts. Make sure to export or save any important normalizations before upgrading.
+</Note>
+
+### Downgrading to Guest Mode
+
+To switch from authenticated to guest:
+
+1. Click your user avatar in the bottom-left sidebar
+2. Select "Log out"
+3. Your authenticated session ends and data is cleared from the browser
+4. On the landing page, click "Continue as Guest" to start a new guest session
+
+## Account Setup
+
+### First-Time Sign-In
+
+After your first successful Google sign-in:
+
+**Welcome Message:**
+```
+Hello [Your Name]! 👋
+
+Welcome to CheckThat AI - your comprehensive platform for 
+claim normalization and fact-checking.
+
+To get started:
+1. Click the key icon to set up your API keys
+2. Select a model from the dropdown
+3. Ask me anything about claim normalization, or upload 
+   a document to analyze!
+```
+
+**Automatic Setup:**
+- User profile created in Supabase database
+- Google Drive integration configured
+- Default conversation created
+- Empty API key configuration ready
+
+### Adding API Keys
+
+After signing in, add your AI provider API keys:
+
+<Steps>
+  <Step title="Navigate to Settings">
+    Click your user avatar → "Settings" to open the settings page.
+  </Step>
+  
+  <Step title="Add API Keys">
+    Enter your API keys for the models you want to use:
+    - OpenAI API Key (for GPT models)
+    - Anthropic API Key (for Claude models)
+    - Google AI API Key (for Gemini models)
+    - xAI API Key (for Grok models)
+    
+    See [API Keys Setup(/installation#api-keys) for detailed instructions.
+  </Step>
+  
+  <Step title="Save to Google Drive">
+    When you save your API keys:
+    - Keys are encrypted and stored in your Google Drive
+    - A file named `checkthat_api_keys.json` is created in a dedicated folder
+    - Keys are retrieved automatically when you use models
+    - Keys never leave your control or get stored on our servers
+  </Step>
+</Steps>
+
+## User Profile
+
+### Profile Information
+
+Your profile includes:
+- **Name**: From your Google account
+- **Email**: Your Google email address
+- **Profile Picture**: Your Google profile photo
+- **User ID**: Unique Supabase user identifier
+- **Session Token**: JWT for API authentication
+
+**View Your Profile:**
+- Click your avatar in the sidebar
+- Select "Account" to view profile details
+
+### Updating Profile
+
+Profile information syncs from your Google account:
+- Name changes in Google reflect automatically
+- Profile picture updates on next sign-in
+- Email changes require re-authentication
+
+## Logging Out
+
+<Steps>
+  <Step title="Open User Menu">
+    Click your avatar in the bottom-left sidebar.
+  </Step>
+  
+  <Step title="Select Log Out">
+    Click "Log out" in the dropdown menu.
+  </Step>
+  
+  <Step title="Confirm Logout">
+    The system:
+    - Calls Supabase `signOut()` method
+    - Clears all local session data
+    - Removes user info from localStorage
+    - Redirects to the landing page
+  </Step>
+</Steps>
+
+**What Gets Cleared:**
+- Browser session tokens
+- Cached user profile data
+- Local conversation cache (conversations remain saved in Supabase)
+
+**What Remains Saved:**
+- Your conversation history (in Supabase database)
+- Your API keys (in your Google Drive)
+- Your user profile (in Supabase)
+
+You can sign back in anytime to restore access to your data.
+
+## Security & Privacy
+
+### Data Security
+
+**Authentication:**
+- OAuth 2.0 via Google
+- Supabase authentication with JWT tokens
+- HTTPS-only connections
+- Secure token refresh mechanism
+
+**API Key Storage:**
+- Keys stored only in your Google Drive
+- End-to-end encryption in transit
+- No server-side key storage
+- You maintain full control and can revoke access anytime
+
+**Session Security:**
+- Secure HTTP-only cookies (when applicable)
+- Auto-logout after inactivity (optional)
+- Token expiry and refresh
+- CSRF protection
+
+### Privacy Policy
+
+**What We Collect:**
+- Basic profile info (name, email, picture) from Google
+- Conversation history (for authenticated users)
+- Usage analytics (aggregated, anonymized)
+
+**What We Don't Collect:**
+- Your API keys (stored only in your Drive)
+- Payment information (you pay providers directly)
+- Personal messages content for training
+
+**Data Usage:**
+- Conversations used only to provide the service
+- No data sold to third parties
+- Aggregated analytics for improving the platform
+
+### Permissions
+
+**Google Drive Access:**
+
+CheckThat AI requests `drive.file` scope:
+- Can only access files it creates
+- Cannot see your other Drive files
+- Used exclusively for API key storage
+- You can revoke access anytime at [Google Account Permissions](https://myaccount.google.com/permissions)
+
+**Supabase Storage:**
+
+Conversations stored in Supabase:
+- PostgreSQL database with row-level security
+- Encrypted at rest and in transit
+- Only accessible by your authenticated session
+- Can be deleted from account settings
+
+## Troubleshooting
+
+### "Authentication Failed"
+
+**Possible causes:**
+- Cookies/localStorage disabled in browser
+- Browser extensions blocking OAuth popup
+- Expired or invalid session token
+- Supabase configuration issue
+
+**Solutions:**
+1. Enable cookies and localStorage
+2. Disable ad blockers temporarily
+3. Try incognito/private browsing mode
+4. Clear browser cache and retry
+5. Use "Continue as Guest" if problem persists
+
+### "No Session Found"
+
+**Occurs when:**
+- Session expired after 7 days
+- You cleared browser data
+- Accessed from a new device
+
+**Solution:**
+- Simply sign in again with Google
+- Your data is safe in Supabase and will be restored
+
+### "Google Drive Permission Denied"
+
+**If you denied Drive access:**
+- API key storage won't work
+- You'll need to re-authorize with correct permissions
+- Go to [Google Account Permissions](https://myaccount.google.com/permissions)
+- Remove CheckThat AI, then sign in again
+
+### "Guest Mode Context Warning"
+
+Seeing "We do not yet support memory context for conversations in guest mode"?
+
+**This is expected behavior:**
+- Guest mode doesn't maintain conversation history
+- Each message is independent
+- Include full context in each message
+- Upgrade to authenticated account for multi-turn conversations
+
+## FAQ
+
+**Q: Can I use CheckThat AI without a Google account?**
+
+A: Yes! Use Guest Mode with the free Llama 3.3 70B model. However, premium features require Google sign-in.
+
+**Q: Why do you need Google Drive access?**
+
+A: To securely store your API keys in your own Drive, keeping them under your control rather than on our servers.
+
+**Q: Can I use a different OAuth provider?**
+
+A: Currently, only Google OAuth is supported. We may add more providers in the future.
+
+**Q: What happens to my data if I delete my account?**
+
+A: You can request account deletion from Settings. This removes all conversations, profile data, and disconnects Google Drive access. Your API keys remain in your Drive.
+
+**Q: Can I export my conversation history?**
+
+A: Yes, authenticated users can export conversations from the account settings page (feature in development).
+
+**Q: Is my conversation data used to train AI models?**
+
+A: No. Your conversations are private and not used for training. AI providers may have their own data policies - check their terms.
+
+## Next Steps
+
+- Set up [API Keys(/installation#api-keys) to access premium models
+- Start using the [Chat Interface](/webapp/chat-interface)
+- Learn about [Claim Normalization](/introduction)
+- Explore [Batch Evaluation](/webapp/batch-evaluation) for scale

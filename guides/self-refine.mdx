@@ -1,0 +1,806 @@
+---
+title: 'Self-Refine Algorithm'
+description: 'Iteratively improve claim quality using G-Eval feedback loops'
+icon: 'arrows-rotate'
+---
+
+Self-Refine is CheckThat AI's iterative improvement algorithm that automatically refines normalized claims using G-Eval feedback. The system evaluates each claim, provides constructive feedback, and generates improved versions until quality thresholds are met.
+
+## How Self-Refine Works
+
+The algorithm implements a feedback loop between claim generation and evaluation:
+
+<Steps>
+  <Step title="Initial Claim Generation">
+    Generate the first normalized claim using your chosen prompting strategy
+  </Step>
+  
+  <Step title="G-Eval Assessment">
+    Evaluate the claim against quality criteria (verifiability, check-worthiness, etc.)
+  </Step>
+  
+  <Step title="Feedback Generation">
+    If score < threshold, generate specific improvement suggestions
+  </Step>
+  
+  <Step title="Claim Refinement">
+    Apply feedback to create improved version
+  </Step>
+  
+  <Step title="Repeat or Complete">
+    Continue until threshold met or max iterations reached
+  </Step>
+</Steps>
+
+## Implementation Details
+
+The Self-Refine algorithm is implemented in `refine.py:46-185`. Here's how it works:
+
+### RefinementService Class
+
+```python
+class RefinementService:
+    def __init__(
+        self, 
+        model: Union[GPTModel, GeminiModel, AnthropicModel, GrokModel], 
+        threshold: float = 0.5,
+        max_iters: int = 3,
+        metrics: Optional[List[str]] = None,
+    ):
+        self.model = model  # DeepEval model for G-Eval
+        self.threshold = threshold  # Minimum acceptable score
+        self.max_iters = max_iters  # Maximum refinement iterations
+        self.metrics = metrics  # Custom evaluation metrics
+```
+
+### Core Algorithm
+
+The `refine_single_claim()` method (lines 63-185) implements the feedback loop:
+
+<Accordion title="View Full Algorithm Flow">
+
+1. **Initial Evaluation:**
+   ```python
+   eval_metric = GEval(
+       name="Claim Quality Assessment",
+       criteria=STATIC_EVAL_SPECS.criteria,
+       evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+       model=self.model,
+       threshold=self.threshold
+   )
+   
+   test_case = LLMTestCase(
+       input=original_query,
+       actual_output=current_claim,
+   )
+   
+   eval_result = evaluate([test_case], [eval_metric])
+   ```
+
+2. **Score Tracking:**
+   ```python
+   refinement_history.append(RefinementHistory(
+       claim_type=ClaimType.ORIGINAL,
+       claim=current_claim,
+       score=original_score,
+       feedback=original_feedback
+   ))
+   ```
+
+3. **Iterative Refinement:**
+   ```python
+   for i in range(self.max_iters):
+       refine_user_prompt = f"""
+       ## Original Query
+       {original_query}
+       
+       ## Current Response  
+       {current_claim}
+       
+       ## Feedback
+       {eval_result.test_results[0].metrics_data[0].reason}
+       
+       ## Task
+       Refine the current response based on the feedback...
+       """
+       
+       refined_response = client.generate_response(
+           user_prompt=refine_user_prompt, 
+           sys_prompt=self.refine_sys_prompt
+       )
+   ```
+
+4. **Early Stopping:**
+   ```python
+   if score >= self.threshold:
+       break
+   ```
+
+</Accordion>
+
+## API Usage
+
+Enable Self-Refine by setting `refine_claims=True` in your API request:
+
+<CodeGroup>
+
+```python Python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[
+        {
+            "role": "user",
+            "content": "Eating vaginal fluids makes you immune to cancer. Scientists at St. Austin University investigated..."
+        }
+    ],
+    # Self-Refine configuration
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",  # Model for evaluation
+    refine_threshold=0.7,  # Target quality score (0.0-1.0)
+    refine_max_iters=3  # Maximum refinement iterations
+)
+
+# Access refinement metadata
+print(f"Final claim: {response.choices[0].message.content}")
+print(f"Refinement history: {response.refinement_metadata.refinement_history}")
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [
+    {
+      role: 'user',
+      content: 'Eating vaginal fluids makes you immune to cancer. Scientists at St. Austin University investigated...'
+    }
+  ],
+  // Self-Refine configuration
+  refine_claims: true,
+  refine_model: 'gpt-5-2025-08-07',
+  refine_threshold: 0.7,
+  refine_max_iters: 3
+});
+
+console.log('Final claim:', response.choices[0].message.content);
+console.log('Refinement history:', response.refinement_metadata.refinement_history);
+```
+
+```bash cURL
+curl https://api.checkthat.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-5-2025-08-07",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Eating vaginal fluids makes you immune to cancer. Scientists at St. Austin University investigated..."
+      }
+    ],
+    "refine_claims": true,
+    "refine_model": "gpt-5-2025-08-07",
+    "refine_threshold": 0.7,
+    "refine_max_iters": 3
+  }'
+```
+
+</CodeGroup>
+
+## Configuration Options
+
+### refine_claims
+
+<ParamField body="refine_claims" type="boolean" default="false">
+  Enable or disable the Self-Refine algorithm
+</ParamField>
+
+```python
+refine_claims=True  # Enable refinement
+```
+
+### refine_model
+
+<ParamField body="refine_model" type="string" required>
+  Model to use for G-Eval evaluation. Must be specified when `refine_claims=True`.
+</ParamField>
+
+Supported models (from `_types.py`):
+
+<Tabs>
+  <Tab title="OpenAI">
+    - `gpt-5-2025-08-07` (GPT-5)
+    - `gpt-5-nano-2025-08-07` (GPT-5 nano)
+    - `o3-2025-04-16` (o3)
+    - `o4-mini-2025-04-16` (o4-mini)
+  </Tab>
+  <Tab title="Anthropic">
+    - `claude-sonnet-4-20250514` (Claude Sonnet 4)
+    - `claude-opus-4-1-20250805` (Claude Opus 4.1)
+  </Tab>
+  <Tab title="Google">
+    - `gemini-2.5-pro` (Gemini 2.5 Pro)
+    - `gemini-2.5-flash` (Gemini 2.5 Flash)
+  </Tab>
+  <Tab title="xAI">
+    - `grok-3` (Grok 3)
+    - `grok-4-0709` (Grok 4)
+    - `grok-3-mini` (Grok 3 Mini)
+  </Tab>
+</Tabs>
+
+```python
+refine_model="gpt-5-2025-08-07"  # Use GPT-5 for evaluation
+```
+
+<Tip>Use a different model for refinement than generation to get diverse perspectives</Tip>
+
+### refine_threshold
+
+<ParamField body="refine_threshold" type="float" default="0.5">
+  Minimum acceptable quality score (0.0 to 1.0). Refinement stops when this score is reached.
+</ParamField>
+
+```python
+refine_threshold=0.7  # Require 70% quality score
+```
+
+**Recommended thresholds:**
+- `0.5` - Basic quality (default)
+- `0.7` - Good quality (recommended for production)
+- `0.85` - High quality (research-grade)
+- `0.95` - Exceptional quality (may not converge)
+
+### refine_max_iters
+
+<ParamField body="refine_max_iters" type="integer" default="3">
+  Maximum number of refinement iterations. Prevents infinite loops.
+</ParamField>
+
+```python
+refine_max_iters=5  # Allow up to 5 refinement attempts
+```
+
+<Warning>Each iteration adds latency and token costs. Start with 3 iterations and adjust based on results.</Warning>
+
+## G-Eval Feedback Loop
+
+The refinement system uses G-Eval metrics defined in `evals.py:25-50`:
+
+### Default Evaluation Criteria
+
+```python
+STATIC_EVAL_SPECS = StaticEvaluation(
+    criteria="""Evaluate the normalized claim against the following criteria: 
+    Verifiability and Self-Containment, 
+    Claim Centrality and Extraction Quality,
+    Conciseness and Clarity, 
+    Check-Worthiness Alignment, 
+    and Factual Consistency""",
+    
+    evaluation_steps=[
+        # Verifiability and Self-Containment
+        "Check if the claim contains verifiable factual assertions that can be independently checked",
+        "Check if the claim is self-contained without requiring additional context from the original post",
+        
+        # Claim Centrality and Extraction Quality
+        "Check if the normalized claim captures the central assertion from the source text",
+        "Check if the claim represents the core factual assertion that requires fact-checking",
+        
+        # Conciseness and Clarity
+        "Check if the claim is presented in a straightforward, concise manner",
+        "Check if the claim is significantly shorter than source posts while preserving essential meaning",
+        
+        # Check-Worthiness Alignment
+        "Check if the normalized claim meets check-worthiness standards for fact-verification",
+        "Check if the claim has general public interest, potential for harm, and likelihood of being false",
+        
+        # Factual Consistency
+        "Check if the normalized claim is factually consistent with the source material",
+        "Check if the claim accurately reflects the original assertion without introducing new information",
+    ]
+)
+```
+
+### Feedback System Prompts
+
+Two specialized prompts guide the refinement process (from `prompts.py`):
+
+<Accordion title="Feedback System Prompt (lines 232-250)">
+
+```python
+feedback_sys_prompt = """
+# Identity
+You are a professional fact-checker and an expert in claim normalization. 
+
+# Instructions
+Your task is to provide detailed, constructive feedback on the generated response 
+based on the criteria provided to ensure that the normalized claims are not only 
+consistent with the original post, but are also self-contained and verifiable.
+
+We want to iteratively improve the above generated response. To help with this, 
+please score the response on the following criteria using a 0–10 scale, and provide 
+a brief justification for each score:
+
+1. **Verifiability:** To what extent does the response contain claims that can be 
+   independently verified using reliable sources? (0 = not verifiable, 10 = fully verifiable)
+2. **Likelihood of Being False:** How likely is it that the response contains false 
+   or misleading information? (0 = very unlikely, 10 = very likely)
+3. **Public Interest:** How likely is the response to be of general public interest 
+   or relevance? (0 = not interesting, 10 = highly interesting)
+4. **Potential Harm:** How likely is the response to be harmful, offensive, or cause 
+   negative consequences? (0 = not harmful, 10 = extremely harmful)
+5. **Check-Worthiness:** How important is it to fact-check this response? 
+   (0 = not worth fact-checking, 10 = highly worth fact-checking)
+
+For each criterion, provide:
+- A score (0-10)
+- Provide a short, precise justification in 1 sentence.
+
+Optionally, suggest specific improvements to the response based on your evaluation.
+"""
+```
+
+</Accordion>
+
+<Accordion title="Refinement System Prompt (lines 252-264)">
+
+```python
+refine_sys_prompt = """
+# Identity
+You are a professional fact-checker and expert in claim normalization. 
+
+# Instructions
+* Your task is to refine the generated response in light of the feedback provided.
+* Using the feedback provided, return a refined version of the generated response, 
+  ensuring that the normalized claim is consistent with the original post, 
+  self-contained, and verifiable.
+* Your response must only be based on the feedback provided.
+* Do not speculate, provide subjective opinions, or add any additional information 
+  or explanations. 
+* Only include the refined, normalized claim in your response. 
+* If no meaningful refinement is necessary, re-output the original normalized claim as-is.
+* If the response is not decontextualized, stand-alone, and verifiable, improve the 
+  response by adding more context from the original post if needed.
+"""
+```
+
+</Accordion>
+
+## Before/After Examples
+
+### Example 1: Medical Misinformation
+
+<Tabs>
+  <Tab title="Original Claim">
+    **Input Post:**
+    ```
+    Corona virus before it reaches the lungs it remains in the throat for four days 
+    … drinking water a lot and gargling with warm water & salt or vinegar eliminates 
+    the virus …
+    ```
+    
+    **Initial Extraction (Score: 0.45):**
+    ```
+    Gargling eliminates coronavirus
+    ```
+    
+    **G-Eval Feedback:**
+    - Verifiability: 6/10 - Testable but lacks specificity
+    - Self-Containment: 4/10 - Missing context about prevention vs. treatment
+    - Check-Worthiness: 8/10 - Health misinformation, high priority
+    
+    **Issues:**
+    - Too vague ("eliminates" is absolute)
+    - Missing specificity (what kind of gargling?)
+    - Unclear claim scope (prevention or cure?)
+  </Tab>
+  
+  <Tab title="After Iteration 1">
+    **Refined Claim (Score: 0.65):**
+    ```
+    Gargling with warm salt water or vinegar can eliminate coronavirus from the throat
+    ```
+    
+    **G-Eval Feedback:**
+    - Verifiability: 7/10 - More specific but still absolute claim
+    - Self-Containment: 7/10 - Better context
+    - Factual Consistency: 5/10 - "Eliminate" is too strong
+    
+    **Remaining Issues:**
+    - "Eliminate" implies 100% effectiveness (unverified)
+  </Tab>
+  
+  <Tab title="Final Claim">
+    **After Iteration 2 (Score: 0.72 ✓):**
+    ```
+    Gargling water can protect against coronavirus
+    ```
+    
+    **G-Eval Scores:**
+    - Verifiability: 8/10 - Clear, testable claim
+    - Self-Containment: 8/10 - Fully self-contained
+    - Conciseness: 9/10 - Concise and clear
+    - Check-Worthiness: 9/10 - Important health claim
+    - Factual Consistency: 7/10 - Accurately reflects original without overstating
+    
+    **Improvements:**
+    ✅ Changed "eliminate" to "protect against" (less absolute)
+    ✅ Removed technical details (simplified)
+    ✅ Maintained verifiability
+  </Tab>
+</Tabs>
+
+### Example 2: Institutional Claim
+
+<Tabs>
+  <Tab title="Iteration 0">
+    **Input:**
+    ```
+    Lieutenant Retired General Asif Mumtaz appointed as Chairman Pakistan Medical 
+    Commission PMC Lieutenant Retired General Asif Mumtaz appointed as Chairman 
+    Pakistan Medical Commission PMC Lieutenant Retired General Asif Mumtaz 
+    appointed as Chairman Pakistan Medical Commission PMC None.
+    ```
+    
+    **Initial Claim (Score: 0.58):**
+    ```
+    Asif Mumtaz appointed as PMC Chairman
+    ```
+    
+    **Feedback:**
+    - Self-Containment: 5/10 - "PMC" acronym not explained
+    - Context: 4/10 - Missing appointing authority
+    - Named Entities: 6/10 - Full title not preserved
+  </Tab>
+  
+  <Tab title="Iteration 1">
+    **Refined Claim (Score: 0.68):**
+    ```
+    Lieutenant Retired General Asif Mumtaz appointed as Chairman of Pakistan Medical Commission
+    ```
+    
+    **Feedback:**
+    - Self-Containment: 7/10 - Better but missing who appointed him
+    - Clarity: 6/10 - "Lieutenant Retired General" is awkward
+    - Context: 5/10 - Appointing authority still missing
+  </Tab>
+  
+  <Tab title="Final">
+    **Final Claim (Score: 0.75 ✓):**
+    ```
+    Pakistani government appoints former army general to head medical regulatory body
+    ```
+    
+    **Improvements:**
+    ✅ Simplified title ("former army general" vs. full rank)
+    ✅ Added appointing authority ("Pakistani government")
+    ✅ Clarified role ("medical regulatory body")
+    ✅ More natural language structure
+  </Tab>
+</Tabs>
+
+## Response Structure
+
+The API returns enhanced metadata when Self-Refine is enabled:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1709568000,
+  "model": "gpt-5-2025-08-07",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Gargling water can protect against coronavirus"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "refinement_metadata": {
+    "metric_used": "Claim Quality Assessment",
+    "threshold": 0.7,
+    "refinement_model": "gpt-5-2025-08-07",
+    "refinement_history": [
+      {
+        "claim_type": "original",
+        "claim": "Gargling eliminates coronavirus",
+        "score": 0.45,
+        "feedback": "Verifiability: 6/10 - Testable but lacks specificity. Self-Containment: 4/10..."
+      },
+      {
+        "claim_type": "refined",
+        "claim": "Gargling with warm salt water or vinegar can eliminate coronavirus from the throat",
+        "score": 0.65,
+        "feedback": "Verifiability: 7/10 - More specific but 'eliminate' is too absolute..."
+      },
+      {
+        "claim_type": "final",
+        "claim": "Gargling water can protect against coronavirus",
+        "score": 0.72,
+        "feedback": "Verifiability: 8/10 - Clear testable claim. Threshold met."
+      }
+    ]
+  }
+}
+```
+
+### Accessing Refinement History
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": post}],
+    refine_claims=True,
+    refine_model="gpt-5-2025-08-07",
+    refine_threshold=0.7,
+    refine_max_iters=3
+)
+
+# Access refinement metadata
+metadata = response.refinement_metadata
+print(f"Model: {metadata.refinement_model}")
+print(f"Threshold: {metadata.threshold}")
+print(f"Iterations: {len(metadata.refinement_history)}")
+
+# Print each iteration
+for i, history in enumerate(metadata.refinement_history):
+    print(f"\n{history.claim_type.upper()} (Score: {history.score})")
+    print(f"Claim: {history.claim}")
+    print(f"Feedback: {history.feedback[:100]}...")
+```
+
+```typescript TypeScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',
+  messages: [{ role: 'user', content: post }],
+  refine_claims: true,
+  refine_model: 'gpt-5-2025-08-07',
+  refine_threshold: 0.7,
+  refine_max_iters: 3
+});
+
+// Access refinement metadata
+const metadata = response.refinement_metadata;
+console.log(`Model: ${metadata.refinement_model}`);
+console.log(`Threshold: ${metadata.threshold}`);
+console.log(`Iterations: ${metadata.refinement_history.length}`);
+
+// Print each iteration
+metadata.refinement_history.forEach((history, i) => {
+  console.log(`\n${history.claim_type.toUpperCase()} (Score: ${history.score})`);
+  console.log(`Claim: ${history.claim}`);
+  console.log(`Feedback: ${history.feedback.substring(0, 100)}...`);
+});
+```
+
+</CodeGroup>
+
+## Performance Considerations
+
+### Token Usage
+
+Each refinement iteration uses tokens for:
+- Original query
+- Current claim
+- Feedback text
+- System prompts
+- Refined claim
+
+**Estimated tokens per iteration:**
+- Initial evaluation: ~500-800 tokens
+- Each refinement: ~600-1000 tokens
+- Total for 3 iterations: ~2000-3500 tokens
+
+### Latency
+
+Self-Refine adds sequential API calls:
+
+```
+Total Time = Initial Generation + (Evaluation + Refinement) × Iterations
+```
+
+**Typical latencies:**
+- Initial generation: 1-3 seconds
+- Each evaluation: 2-4 seconds
+- Each refinement: 1-3 seconds
+- **Total for 3 iterations: 10-25 seconds**
+
+<Warning>Self-Refine is not suitable for real-time applications. Consider async processing or lower iteration counts.</Warning>
+
+### Cost Optimization
+
+<Tabs>
+  <Tab title="Strategy 1: Selective Refinement">
+    Only refine claims that need it:
+    
+    ```python
+    # Quick initial check
+    quick_response = client.chat.completions.create(
+        model="gpt-5-nano-2025-08-07",  # Fast model
+        messages=[{"role": "user", "content": post}]
+    )
+    
+    # Only refine if claim seems complex
+    if needs_refinement(quick_response):
+        refined = client.chat.completions.create(
+            model="gpt-5-2025-08-07",
+            messages=[{"role": "user", "content": post}],
+            refine_claims=True,
+            refine_model="gpt-5-2025-08-07",
+            refine_threshold=0.7,
+            refine_max_iters=2  # Reduce iterations
+        )
+    ```
+  </Tab>
+  
+  <Tab title="Strategy 2: Cheaper Eval Model">
+    Use a faster model for evaluation:
+    
+    ```python
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",  # High-quality generation
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model="gpt-5-nano-2025-08-07",  # Cheaper evaluation
+        refine_threshold=0.65,  # Lower threshold
+        refine_max_iters=2
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Strategy 3: Batch Processing">
+    Process multiple claims in parallel:
+    
+    ```python
+    import asyncio
+    
+    async def refine_batch(posts):
+        tasks = [
+            client.chat.completions.create(
+                model="gpt-5-2025-08-07",
+                messages=[{"role": "user", "content": post}],
+                refine_claims=True,
+                refine_model="gpt-5-2025-08-07",
+                refine_threshold=0.7,
+                refine_max_iters=3
+            )
+            for post in posts
+        ]
+        return await asyncio.gather(*tasks)
+    
+    results = asyncio.run(refine_batch(social_media_posts))
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Conservative" icon="gauge-simple-low">
+    Begin with `threshold=0.5` and `max_iters=2`, then increase
+  </Card>
+  <Card title="Monitor Convergence" icon="chart-line">
+    Track score improvements per iteration to optimize settings
+  </Card>
+  <Card title="Use Different Models" icon="arrows-left-right">
+    Generate with one model, evaluate with another for diversity
+  </Card>
+  <Card title="Async Processing" icon="clock">
+    Run Self-Refine in background for non-urgent claims
+  </Card>
+</CardGroup>
+
+<Tip>
+  For high-throughput systems, consider implementing a two-tier approach: fast zero-shot for all claims, then Self-Refine for high-priority items during off-peak hours.
+</Tip>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Refinement Not Converging">
+    **Problem:** Scores plateau below threshold
+    
+    **Solutions:**
+    - Lower `refine_threshold` to 0.6 or 0.65
+    - Increase `refine_max_iters` to 5
+    - Try a more capable `refine_model`
+    - Check if original post has enough verifiable content
+    
+    ```python
+    # Debugging convergence issues
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model="claude-opus-4-1-20250805",  # Try different model
+        refine_threshold=0.65,  # Lower threshold
+        refine_max_iters=5  # More attempts
+    )
+    
+    # Analyze score progression
+    scores = [h.score for h in response.refinement_metadata.refinement_history]
+    print(f"Score progression: {scores}")
+    if scores[-1] - scores[0] < 0.1:
+        print("Warning: Minimal improvement, may need different approach")
+    ```
+  </Accordion>
+  
+  <Accordion title="High Latency">
+    **Problem:** Refinement takes too long
+    
+    **Solutions:**
+    - Reduce `refine_max_iters` to 2
+    - Use faster models like `gpt-5-nano` or `gemini-2.5-flash`
+    - Implement async processing
+    - Cache evaluation results for similar claims
+  </Accordion>
+  
+  <Accordion title="Inconsistent Results">
+    **Problem:** Same input produces different refinements
+    
+    **Solutions:**
+    - Set `temperature=0` for deterministic outputs
+    - Use `seed` parameter for reproducibility
+    - Increase `refine_threshold` to force more iterations
+    
+    ```python
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{"role": "user", "content": post}],
+        temperature=0,  # Deterministic
+        seed=42,  # Reproducible
+        refine_claims=True,
+        refine_model="gpt-5-2025-08-07",
+        refine_threshold=0.75
+    )
+    ```
+  </Accordion>
+  
+  <Accordion title="Error: 'refine_model is required'">
+    **Problem:** Missing required parameter
+    
+    **Solution:**
+    ```python
+    # Incorrect - missing refine_model
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True  # ❌ Error
+    )
+    
+    # Correct - includes refine_model
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model="gpt-5-2025-08-07"  # ✅ Required
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cross-Refine" icon="diagram-project" href="/guides/cross-refine">
+    Use multiple models for collaborative refinement
+  </Card>
+  <Card title="Custom Evaluation" icon="sliders" href="/guides/custom-evaluation">
+    Create your own G-Eval criteria
+  </Card>
+</CardGroup>

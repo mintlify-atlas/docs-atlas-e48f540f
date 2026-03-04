@@ -1,0 +1,211 @@
+---
+title: 'Chat Interface'
+description: 'Use the interactive chat interface for real-time claim normalization'
+icon: 'message-square'
+---
+
+The CheckThat AI chat interface provides a conversational way to normalize claims using advanced AI models. Get instant, streaming responses and refine your results through multi-turn conversations.
+
+## Getting Started
+
+Access the chat interface at [checkthat.ai/chat](https://nikhil-kadapala.github.io/clef2025-checkthat-lab-task2/chat) after signing in or continuing as a guest.
+
+### Guest Mode vs Authenticated Users
+
+**Guest Mode** (No Sign-in Required)
+- Access to free Llama 3.3 70B model
+- No conversation history saved
+- Limited context window (≤200k tokens per message)
+- No file upload capabilities
+
+**Authenticated Users**
+- Access to premium models (GPT-5, Claude Opus 4.1, Gemini 2.5 Pro, etc.)
+- Conversation history saved to your account
+- Multi-turn context maintained automatically
+- File upload and document analysis
+- Advanced conversation management
+
+## Using the Chat Interface
+
+<Steps>
+  <Step title="Select Your Model">
+    Click the model dropdown in the top-right corner to choose your AI model:
+    
+    **Free Models** (Available to all users):
+    - Llama 3.3 70B (Together AI)
+    - DeepSeek R1 Distill Llama 70B
+    - Gemini 2.5 Flash
+    
+    **Premium Models** (Require sign-in):
+    - GPT-5 & GPT-5 nano (OpenAI)
+    - o3 & o4-mini (OpenAI)
+    - Claude Sonnet 4 & Opus 4.1 (Anthropic)
+    - Gemini 2.5 Pro (Google)
+    - Grok 4, Grok 3, Grok 3 Mini (xAI)
+    
+    <Note>
+    Premium models require you to add your own API keys. See the [API Keys(/installation#api-keys) guide for setup instructions.
+    </Note>
+  </Step>
+  
+  <Step title="Enter Your Claim">
+    Type or paste your noisy social media claim in the message input box at the bottom of the screen.
+    
+    **Example input:**
+    ```
+    OMG guys!! Did u hear that the new vaccine has like 
+    5G chips in it?? My cousin's friend said so... 😱😱
+    ```
+    
+    **Tips for better results:**
+    - Include as much context as possible in your query
+    - For guest users, include relevant context in each message since conversation history isn't maintained
+    - Use Shift+Enter to add line breaks without sending
+  </Step>
+  
+  <Step title="Send and Watch Streaming Response">
+    Press Enter or click the send button (↑) to submit your message.
+    
+    The AI model will begin streaming its response in real-time, token by token. You'll see:
+    - A blinking cursor indicating active generation
+    - Text appearing progressively as the model generates it
+    - The model badge showing which AI is responding
+    
+    <Tip>
+    You can stop generation at any time by clicking the Stop button (⬜) if the response is taking too long or heading in the wrong direction.
+    </Tip>
+  </Step>
+  
+  <Step title="Refine Through Conversation">
+    Continue the conversation to refine the normalized claim:
+    
+    **Example follow-up:**
+    ```
+    Can you make it more formal and fact-checkable?
+    ```
+    
+    The model maintains context (for authenticated users) and can iteratively improve the normalization based on your feedback.
+  </Step>
+</Steps>
+
+## Chat Interface Features
+
+### Real-Time Streaming
+
+Responses stream in real-time as the model generates them, providing immediate feedback without waiting for the complete response. The streaming indicator shows:
+- Active generation with a blinking cursor
+- Smooth text rendering at ~120ms refresh rate
+- Auto-scroll that respects your scroll position
+
+### Conversation Management
+
+**Sidebar Features:**
+- **New Chat**: Create a new conversation thread
+- **Recent Chats**: Access your conversation history (authenticated users only)
+- **Delete Conversations**: Remove unwanted chat threads
+- **Auto-Save**: Conversations save automatically as you chat
+
+**Message Actions:**
+- **Copy**: Copy any message content to clipboard
+- **Edit & Regenerate**: Edit your previous messages to explore different normalizations
+- **Branch Navigation**: When you edit a message, the original and new responses are saved as branches you can switch between
+
+### Model Selection
+
+Switch models mid-conversation to compare results:
+
+```
+User: Normalize this claim: "Biden's new law is destroying jobs!!!"
+
+[GPT-5 response]
+
+User: (switches to Claude Opus 4.1)
+How would you normalize it differently?
+
+[Claude response]
+```
+
+Each response shows which model generated it via the model badge.
+
+### Guest Mode Context Warning
+
+<Warning>
+Guest users see a warning on first message: "We do not yet support memory context for conversations in guest mode. Please try to include as much context as you can in your queries (≤200k tokens)."
+
+For complex multi-turn normalization tasks, we recommend signing in to maintain conversation context automatically.
+</Warning>
+
+## Tips for Best Results
+
+### 1. Be Specific About Your Needs
+
+**Instead of:**
+```
+Normalize this claim
+```
+
+**Try:**
+```
+Normalize this social media claim into a clear, fact-checkable statement. 
+Remove emotional language and focus on the factual assertion.
+```
+
+### 2. Use Multi-Turn Refinement
+
+**Initial message:**
+```
+Normalize: "Everyone is saying the economy is worse than ever!"
+```
+
+**Follow-up:**
+```
+Can you make it more specific? What time period and which economic indicators?
+```
+
+**Further refinement:**
+```
+Add attribution - who is making this claim?
+```
+
+### 3. Leverage Different Models
+
+- **GPT-5**: Best for complex reasoning and nuanced normalization
+- **Claude Opus 4.1**: Excellent at maintaining factual accuracy
+- **Gemini 2.5 Pro**: Strong at handling multiple claims in one post
+- **Llama 3.3 70B**: Fast and free for quick normalizations
+
+### 4. Include Context for Guest Mode
+
+Since guest mode doesn't maintain history:
+
+**Include context in each message:**
+```
+I previously asked you to normalize this claim: "Vaccines cause autism."
+You produced: "Some sources claim vaccines cause autism."
+Now make it more fact-checkable by specifying which vaccines and what evidence.
+```
+
+## Keyboard Shortcuts
+
+- **Enter**: Send message
+- **Shift + Enter**: New line without sending
+- **⌘B** (Mac) / **Ctrl+B** (Windows): Toggle sidebar
+
+## Message Formatting
+
+The chat interface supports Markdown formatting in responses:
+
+- **Bold**: `**text**`
+- *Italic*: `*text*`
+- Code: `` `code` ``
+- Lists, tables, and more via GitHub-flavored Markdown
+
+## Theme Toggle
+
+Click the theme toggle (🌙/☀️) in the top-right to switch between light and dark modes. Your preference is saved automatically.
+
+## Next Steps
+
+- Set up [API Keys(/installation#api-keys) to access premium models
+- Try [Batch Evaluation](/webapp/batch-evaluation) for processing multiple claims at once
+- Learn about [Claim Normalization Strategies(/guides/prompting-strategies)

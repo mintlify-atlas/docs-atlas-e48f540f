@@ -1,0 +1,773 @@
+---
+title: 'Cross-Refine with Multiple Models'
+description: 'Collaborative claim refinement using multiple AI models'
+icon: 'diagram-project'
+---
+
+Cross-Refine extends the Self-Refine algorithm by leveraging multiple AI models in the refinement process. By using different models for generation, evaluation, and refinement, you can achieve higher quality claims through diverse perspectives.
+
+## Concept Overview
+
+Cross-Refine implements a collaborative approach:
+
+<Steps>
+  <Step title="Generate with Model A">
+    Create initial normalized claim using your primary model
+  </Step>
+  
+  <Step title="Evaluate with Model B">
+    Use a different model for G-Eval assessment to get alternative perspective
+  </Step>
+  
+  <Step title="Refine with Model C">
+    Optional: Use third model for refinement based on feedback
+  </Step>
+  
+  <Step title="Consensus or Selection">
+    Choose best result or create consensus claim
+  </Step>
+</Steps>
+
+## Why Multiple Models?
+
+Different models have unique strengths:
+
+<CardGroup cols={3}>
+  <Card title="OpenAI (GPT-5)" icon="brain">
+    - Excellent reasoning
+    - Strong factuality
+    - Good at complex claims
+  </Card>
+  <Card title="Anthropic (Claude)" icon="shield-check">
+    - Safety-focused
+    - Nuanced understanding
+    - Detailed explanations
+  </Card>
+  <Card title="Google (Gemini)" icon="lightbulb">
+    - Broad knowledge
+    - Multilingual support
+    - Creative rephrasing
+  </Card>
+</CardGroup>
+
+## Supported Models
+
+CheckThat AI supports 5 model providers (from `_types.py:4-17`):
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```python
+    OPENAI_MODELS = [
+        "gpt-5-2025-08-07",           # GPT-5 (most capable)
+        "gpt-5-nano-2025-08-07",      # GPT-5 nano (faster)
+        "o3-2025-04-16",              # o3 reasoning
+        "o4-mini-2025-04-16"          # o4-mini
+    ]
+    ```
+    
+    **Best for:**
+    - Initial claim generation
+    - Complex reasoning tasks
+    - Chain-of-thought prompting
+  </Tab>
+  
+  <Tab title="Anthropic">
+    ```python
+    ANTHROPIC_MODELS = [
+        "claude-sonnet-4-20250514",    # Claude Sonnet 4
+        "claude-opus-4-1-20250805"     # Claude Opus 4.1 (most capable)
+    ]
+    ```
+    
+    **Best for:**
+    - Evaluation and feedback
+    - Safety-critical claims
+    - Nuanced language analysis
+  </Tab>
+  
+  <Tab title="Google">
+    ```python
+    GEMINI_MODELS = [
+        "gemini-2.5-pro",              # Gemini 2.5 Pro
+        "gemini-2.5-flash"             # Gemini 2.5 Flash (faster)
+    ]
+    ```
+    
+    **Best for:**
+    - Multilingual content
+    - Creative refinement
+    - Broad knowledge queries
+  </Tab>
+  
+  <Tab title="xAI">
+    ```python
+    xAI_MODELS = [
+        "grok-3",                      # Grok 3
+        "grok-4-0709",                 # Grok 4 (most capable)
+        "grok-3-mini"                  # Grok 3 Mini (faster)
+    ]
+    ```
+    
+    **Best for:**
+    - Alternative perspectives
+    - Real-time data integration
+    - Unconventional claims
+  </Tab>
+  
+  <Tab title="Together AI">
+    ```python
+    TOGETHER_MODELS = [
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"
+    ]
+    ```
+    
+    **Best for:**
+    - Cost-effective processing
+    - Open-source alternatives
+    - High-throughput scenarios
+  </Tab>
+</Tabs>
+
+## Basic Cross-Refine Pattern
+
+### Two-Model Approach
+
+Generate with one model, evaluate with another:
+
+<CodeGroup>
+
+```python Python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+post = """Eating vaginal fluids makes you immune to cancer. 
+Scientists at St. Austin University in North Carolina investigated..."""
+
+# Generate with GPT-5, evaluate with Claude
+response = client.chat.completions.create(
+    model="gpt-5-2025-08-07",              # Generation model
+    messages=[{"role": "user", "content": post}],
+    refine_claims=True,
+    refine_model="claude-opus-4-1-20250805",  # Evaluation model (different!)
+    refine_threshold=0.7,
+    refine_max_iters=3
+)
+
+print(f"Final claim: {response.choices[0].message.content}")
+print(f"\nRefinement by: {response.refinement_metadata.refinement_model}")
+print(f"Iterations: {len(response.refinement_metadata.refinement_history)}")
+```
+
+```typescript TypeScript
+import CheckThat from 'checkthat';
+
+const client = new CheckThat({
+  apiKey: process.env.CHECKTHAT_API_KEY
+});
+
+const post = `Eating vaginal fluids makes you immune to cancer. 
+Scientists at St. Austin University in North Carolina investigated...`;
+
+// Generate with GPT-5, evaluate with Claude
+const response = await client.chat.completions.create({
+  model: 'gpt-5-2025-08-07',              // Generation model
+  messages: [{ role: 'user', content: post }],
+  refine_claims: true,
+  refine_model: 'claude-opus-4-1-20250805',  // Evaluation model (different!)
+  refine_threshold: 0.7,
+  refine_max_iters: 3
+});
+
+console.log(`Final claim: ${response.choices[0].message.content}`);
+console.log(`\nRefinement by: ${response.refinement_metadata.refinement_model}`);
+console.log(`Iterations: ${response.refinement_metadata.refinement_history.length}`);
+```
+
+</CodeGroup>
+
+<Tip>Using different models for generation and evaluation reduces model bias and improves claim quality</Tip>
+
+### Three-Model Approach
+
+Generate with Model A, evaluate with Model B, refine with Model C:
+
+```python
+from checkthat import CheckThat
+
+client = CheckThat(api_key="your-api-key")
+
+post = "Corona virus remains in throat for 4 days before reaching lungs. Gargling eliminates it."
+
+# Step 1: Generate with GPT-5 nano (fast)
+initial = client.chat.completions.create(
+    model="gpt-5-nano-2025-08-07",
+    messages=[{"role": "user", "content": post}]
+)
+initial_claim = initial.choices[0].message.content
+
+# Step 2: Evaluate with Claude (thorough assessment)
+evaluation_prompt = f"""
+Original post: {post}
+Extracted claim: {initial_claim}
+
+As a professional fact-checker, evaluate this claim on a 0-1 scale for:
+1. Verifiability
+2. Self-containment  
+3. Check-worthiness
+4. Factual consistency
+
+Provide specific improvement suggestions.
+"""
+
+evaluation = client.chat.completions.create(
+    model="claude-opus-4-1-20250805",
+    messages=[{"role": "user", "content": evaluation_prompt}]
+)
+feedback = evaluation.choices[0].message.content
+
+# Step 3: Refine with Gemini (creative rephrasing)
+refinement_prompt = f"""
+Original post: {post}
+Current claim: {initial_claim}
+
+Expert feedback:
+{feedback}
+
+Refine the claim based on this feedback. Output only the improved claim.
+"""
+
+refined = client.chat.completions.create(
+    model="gemini-2.5-pro",
+    messages=[{"role": "user", "content": refinement_prompt}]
+)
+
+final_claim = refined.choices[0].message.content
+print(f"Initial (GPT-5 nano): {initial_claim}")
+print(f"Final (Gemini after Claude eval): {final_claim}")
+```
+
+## Model Selection Strategies
+
+### Strategy 1: Complementary Strengths
+
+Pair models with complementary capabilities:
+
+<Tabs>
+  <Tab title="Safety-Critical">
+    **Use Case:** Medical misinformation, harmful content
+    
+    ```python
+    # Generate: Fast model for initial extraction
+    # Evaluate: Safety-focused model
+    response = client.chat.completions.create(
+        model="gpt-5-nano-2025-08-07",        # Fast generation
+        refine_model="claude-opus-4-1-20250805",  # Safety evaluation
+        refine_claims=True,
+        refine_threshold=0.8  # High bar for safety
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Multilingual">
+    **Use Case:** Non-English content
+    
+    ```python
+    # Generate: Multilingual model
+    # Evaluate: Strong reasoning model
+    response = client.chat.completions.create(
+        model="gemini-2.5-pro",               # Multilingual strength
+        refine_model="gpt-5-2025-08-07",      # Reasoning evaluation
+        refine_claims=True,
+        refine_threshold=0.7
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Complex Reasoning">
+    **Use Case:** Ambiguous claims requiring deep analysis
+    
+    ```python
+    # Generate: Reasoning model with CoT
+    # Evaluate: Alternative reasoning model
+    response = client.chat.completions.create(
+        model="o3-2025-04-16",                 # o3 reasoning
+        refine_model="claude-opus-4-1-20250805",  # Alternative reasoning
+        refine_claims=True,
+        refine_threshold=0.75
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Cost-Optimized">
+    **Use Case:** High-volume processing
+    
+    ```python
+    # Generate: Free/cheap model
+    # Evaluate: Efficient model
+    response = client.chat.completions.create(
+        model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",  # Free
+        refine_model="gpt-5-nano-2025-08-07",  # Efficient evaluation
+        refine_claims=True,
+        refine_threshold=0.65,
+        refine_max_iters=2  # Limit iterations
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### Strategy 2: Consensus Building
+
+Generate multiple claims and build consensus:
+
+```python
+import asyncio
+from collections import Counter
+
+async def cross_refine_consensus(post: str, models: list):
+    """Generate claims with multiple models and find consensus."""
+    client = CheckThat(api_key="your-api-key")
+    
+    # Generate with multiple models in parallel
+    tasks = [
+        client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": post}],
+            refine_claims=True,
+            refine_model="claude-opus-4-1-20250805",  # Same evaluator
+            refine_threshold=0.7
+        )
+        for model in models
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Extract final claims and scores
+    claims = [
+        (
+            r.choices[0].message.content,
+            r.refinement_metadata.refinement_history[-1].score,
+            model
+        )
+        for r, model in zip(results, models)
+    ]
+    
+    # Sort by score
+    claims.sort(key=lambda x: x[1], reverse=True)
+    
+    print("\nCross-Refine Results:")
+    for claim, score, model in claims:
+        print(f"\n{model} (score: {score:.2f})")
+        print(f"  {claim}")
+    
+    # Return highest-scoring claim
+    return claims[0]
+
+# Use multiple models
+models = [
+    "gpt-5-2025-08-07",
+    "claude-opus-4-1-20250805",
+    "gemini-2.5-pro",
+    "grok-4-0709"
+]
+
+post = """Hydrate YOURSELF. Water 30 min before a meal. 
+DRINK before taking a shower. Helps activate internal organs, 
+digest food, lower blood pressure."""
+
+best_claim, best_score, best_model = asyncio.run(
+    cross_refine_consensus(post, models)
+)
+
+print(f"\n\nBest Claim ({best_model}, {best_score:.2f}):")
+print(best_claim)
+```
+
+**Output:**
+```
+Cross-Refine Results:
+
+gpt-5-2025-08-07 (score: 0.72)
+  Drinking water at specific times can have different health benefits
+
+claude-opus-4-1-20250805 (score: 0.71)
+  Drinking water at specific times throughout the day provides various health benefits
+
+gemini-2.5-pro (score: 0.69)
+  Timing water consumption can offer multiple health advantages
+
+grok-4-0709 (score: 0.68)
+  Strategic water intake timing may support various bodily functions
+
+
+Best Claim (gpt-5-2025-08-07, 0.72):
+Drinking water at specific times can have different health benefits
+```
+
+### Strategy 3: Ensemble Refinement
+
+Use multiple models for evaluation:
+
+```python
+from checkthat import CheckThat
+import numpy as np
+
+client = CheckThat(api_key="your-api-key")
+
+post = "Bruce Lee playing table tennis with nunchucks in 1970"
+
+# Generate initial claim
+initial = client.chat.completions.create(
+    model="gpt-5-2025-08-07",
+    messages=[{"role": "user", "content": post}]
+)
+initial_claim = initial.choices[0].message.content
+
+# Evaluate with multiple models
+eval_models = [
+    "claude-opus-4-1-20250805",
+    "gemini-2.5-pro",
+    "gpt-5-2025-08-07"
+]
+
+evaluations = []
+for eval_model in eval_models:
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",  # Same generator
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model=eval_model,  # Different evaluators
+        refine_threshold=0.7,
+        refine_max_iters=2
+    )
+    
+    final_history = response.refinement_metadata.refinement_history[-1]
+    evaluations.append({
+        "model": eval_model,
+        "claim": response.choices[0].message.content,
+        "score": final_history.score,
+        "feedback": final_history.feedback
+    })
+
+# Calculate ensemble metrics
+scores = [e["score"] for e in evaluations]
+avg_score = np.mean(scores)
+std_score = np.std(scores)
+
+print(f"\nEnsemble Evaluation Results:")
+print(f"Average Score: {avg_score:.3f} (±{std_score:.3f})")
+print(f"\nIndividual Evaluations:")
+
+for eval_result in evaluations:
+    print(f"\n{eval_result['model']}: {eval_result['score']:.3f}")
+    print(f"  Claim: {eval_result['claim']}")
+    print(f"  Feedback: {eval_result['feedback'][:100]}...")
+
+# Use claim with highest score or best consensus
+best = max(evaluations, key=lambda x: x["score"])
+print(f"\n\nRecommended Claim ({best['model']}):")
+print(best['claim'])
+```
+
+## Real-World Examples
+
+### Example 1: Medical Misinformation
+
+<Tabs>
+  <Tab title="GPT-5 Only">
+    **Configuration:**
+    ```python
+    model="gpt-5-2025-08-07"
+    refine_model="gpt-5-2025-08-07"  # Same model
+    ```
+    
+    **Result (Score: 0.68):**
+    ```
+    Gargling with warm water and salt or vinegar eliminates coronavirus from throat
+    ```
+    
+    **Issues:**
+    - "Eliminates" is too absolute
+    - Single model bias
+  </Tab>
+  
+  <Tab title="GPT-5 + Claude">
+    **Configuration:**
+    ```python
+    model="gpt-5-2025-08-07"              # Generation
+    refine_model="claude-opus-4-1-20250805"  # Evaluation
+    ```
+    
+    **Result (Score: 0.75):**
+    ```
+    Gargling water can protect against coronavirus
+    ```
+    
+    **Improvements:**
+    ✅ Claude's safety focus caught overstated claim
+    ✅ More accurate representation
+    ✅ Better hedge ("can protect" vs "eliminates")
+  </Tab>
+  
+  <Tab title="Consensus (4 Models)">
+    **Models:**
+    - GPT-5: "Gargling can protect against coronavirus"
+    - Claude: "Gargling water may help prevent coronavirus"
+    - Gemini: "Throat gargling offers coronavirus protection"
+    - Grok: "Gargling suggested as coronavirus preventive measure"
+    
+    **Consensus (Score: 0.78):**
+    ```
+    Gargling water can protect against coronavirus
+    ```
+    
+    **Why Best:**
+    ✅ Highest average score across evaluators
+    ✅ Most similar to other models (consensus)
+    ✅ Balanced confidence level
+  </Tab>
+</Tabs>
+
+### Example 2: Celebrity Content
+
+<Tabs>
+  <Tab title="Fast Processing">
+    **Use Case:** Low-priority viral content
+    
+    ```python
+    # Quick two-pass
+    response = client.chat.completions.create(
+        model="gpt-5-nano-2025-08-07",        # Fast generation
+        refine_model="gpt-5-nano-2025-08-07",  # Fast evaluation
+        refine_claims=True,
+        refine_threshold=0.6,  # Lower bar
+        refine_max_iters=1  # Single refinement
+    )
+    ```
+    
+    **Result (Score: 0.62, 3 seconds):**
+    ```
+    Video shows Bruce Lee playing table tennis with nunchucks
+    ```
+  </Tab>
+  
+  <Tab title="Quality Processing">
+    **Use Case:** Verification required
+    
+    ```python
+    # Cross-model refinement
+    response = client.chat.completions.create(
+        model="gpt-5-2025-08-07",              # Strong reasoning
+        refine_model="gemini-2.5-pro",         # Creative refinement
+        refine_claims=True,
+        refine_threshold=0.7,
+        refine_max_iters=3
+    )
+    ```
+    
+    **Result (Score: 0.74, 15 seconds):**
+    ```
+    Late actor and martial artist Bruce Lee playing table tennis with a set of nunchucks
+    ```
+    
+    **Improvements:**
+    ✅ Added context ("Late actor and martial artist")
+    ✅ More precise language ("set of nunchucks")
+    ✅ Self-contained claim
+  </Tab>
+</Tabs>
+
+## Model Compatibility
+
+All models support Cross-Refine through the unified DeepEval interface (from `deepeval_model.py:27-56`):
+
+<Accordion title="DeepEval Model Mapping">
+
+```python
+def getEvalModel(self) -> Union[GPTModel, GeminiModel, AnthropicModel, GrokModel]:
+    """Map CheckThat models to DeepEval evaluation models."""
+    
+    if self.api_provider == 'OPENAI':
+        return GPTModel(model=self.model, _openai_api_key=self.api_key)
+        
+    elif self.api_provider == 'XAI':
+        return GrokModel(model=self.model, api_key=self.api_key)
+        
+    elif self.api_provider == 'ANTHROPIC':
+        return AnthropicModel(model=self.model, _anthropic_api_key=self.api_key)
+        
+    elif self.api_provider == 'GEMINI':
+        return GeminiModel(model=self.model, api_key=self.api_key)
+```
+
+**Supported combinations:**
+- Any generation model + Any evaluation model
+- Cross-provider refinement (OpenAI → Claude → Gemini)
+- Same-provider different versions (GPT-5 → GPT-5 nano)
+
+</Accordion>
+
+## Performance Comparison
+
+### Speed vs. Quality Trade-offs
+
+<Tabs>
+  <Tab title="Speed Priority">
+    **Configuration:**
+    ```python
+    model="gpt-5-nano-2025-08-07"              # Fast
+    refine_model="gpt-5-nano-2025-08-07"       # Fast
+    refine_threshold=0.6
+    refine_max_iters=1
+    ```
+    
+    **Metrics:**
+    - Latency: 3-5 seconds
+    - Cost: $
+    - Quality Score: 0.60-0.65
+    - Best for: High-volume, low-priority claims
+  </Tab>
+  
+  <Tab title="Balanced">
+    **Configuration:**
+    ```python
+    model="gpt-5-2025-08-07"                   # Quality
+    refine_model="claude-sonnet-4-20250514"    # Different provider
+    refine_threshold=0.7
+    refine_max_iters=2
+    ```
+    
+    **Metrics:**
+    - Latency: 8-12 seconds
+    - Cost: $$
+    - Quality Score: 0.70-0.75
+    - Best for: Production fact-checking
+  </Tab>
+  
+  <Tab title="Quality Priority">
+    **Configuration:**
+    ```python
+    model="o3-2025-04-16"                       # Reasoning
+    refine_model="claude-opus-4-1-20250805"    # Premium evaluation
+    refine_threshold=0.8
+    refine_max_iters=4
+    ```
+    
+    **Metrics:**
+    - Latency: 20-35 seconds
+    - Cost: $$$$
+    - Quality Score: 0.80-0.88
+    - Best for: Legal, medical, high-stakes claims
+  </Tab>
+  
+  <Tab title="Consensus">
+    **Configuration:**
+    ```python
+    models=["gpt-5-2025-08-07", "claude-opus-4-1-20250805", 
+            "gemini-2.5-pro", "grok-4-0709"]
+    refine_model="gpt-5-2025-08-07"  # Same evaluator
+    refine_threshold=0.75
+    refine_max_iters=2
+    ```
+    
+    **Metrics:**
+    - Latency: 12-18 seconds (parallel)
+    - Cost: $$$$
+    - Quality Score: 0.75-0.82 (consensus)
+    - Best for: Contentious claims, research
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Simple" icon="play">
+    Begin with single-model, then add cross-refine if needed
+  </Card>
+  <Card title="Match Use Case" icon="bullseye">
+    High-stakes claims deserve premium model combinations
+  </Card>
+  <Card title="Monitor Costs" icon="coins">
+    Multiple models multiply costs - track ROI
+  </Card>
+  <Card title="A/B Test" icon="flask-vial">
+    Compare model combinations on your specific data
+  </Card>
+</CardGroup>
+
+<Tip>
+  For production systems, implement a tiered approach: fast models for initial filtering, cross-refine with premium models for high-priority claims.
+</Tip>
+
+## Advanced Patterns
+
+### Pattern 1: Specialist Cascade
+
+```python
+def specialist_cascade(post: str, domain: str):
+    """Use specialized models based on domain."""
+    client = CheckThat(api_key="your-api-key")
+    
+    # Domain-specific model selection
+    specialist_map = {
+        "medical": "claude-opus-4-1-20250805",  # Safety-focused
+        "legal": "gpt-5-2025-08-07",            # Reasoning
+        "multilingual": "gemini-2.5-pro",       # Language support
+        "technical": "o3-2025-04-16",           # Deep reasoning
+    }
+    
+    generation_model = specialist_map.get(domain, "gpt-5-2025-08-07")
+    evaluation_model = "claude-opus-4-1-20250805"  # Always use Claude for eval
+    
+    return client.chat.completions.create(
+        model=generation_model,
+        messages=[{"role": "user", "content": post}],
+        refine_claims=True,
+        refine_model=evaluation_model,
+        refine_threshold=0.75,
+        refine_max_iters=3
+    )
+```
+
+### Pattern 2: Quality Threshold Escalation
+
+```python
+async def escalating_refinement(post: str):
+    """Escalate to better models if quality threshold not met."""
+    client = CheckThat(api_key="your-api-key")
+    
+    model_tiers = [
+        ("gpt-5-nano-2025-08-07", "gpt-5-nano-2025-08-07", 0.65),
+        ("gpt-5-2025-08-07", "claude-sonnet-4-20250514", 0.75),
+        ("o3-2025-04-16", "claude-opus-4-1-20250805", 0.85),
+    ]
+    
+    for gen_model, eval_model, threshold in model_tiers:
+        response = await client.chat.completions.create(
+            model=gen_model,
+            messages=[{"role": "user", "content": post}],
+            refine_claims=True,
+            refine_model=eval_model,
+            refine_threshold=threshold,
+            refine_max_iters=2
+        )
+        
+        final_score = response.refinement_metadata.refinement_history[-1].score
+        
+        if final_score >= threshold:
+            return response  # Success at this tier
+    
+    return response  # Return best attempt
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Evaluation" icon="sliders" href="/guides/custom-evaluation">
+    Define your own G-Eval criteria
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/completions/create">
+    View complete parameter reference
+  </Card>
+</CardGroup>

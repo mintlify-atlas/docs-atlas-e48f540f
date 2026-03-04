@@ -1,0 +1,263 @@
+---
+title: "Claim Normalization"
+description: "Transform noisy social media posts into verifiable, self-contained factual claims"
+icon: "filter"
+---
+
+## What is Claim Normalization?
+
+Claim normalization is the process of transforming noisy, context-dependent social media posts into clean, **verifiable factual statements** that can be independently fact-checked. CheckThat AI extracts the central claim from text while removing extraneous information, opinions, and context-specific references.
+
+<Info>
+**Core Objective**: Convert raw social media content into decontextualized, stand-alone claims that professional fact-checkers can verify using reliable sources.
+</Info>
+
+## The Transformation Process
+
+CheckThat AI's ClaimNorm agent follows a systematic 4-step process to normalize claims:
+
+### Step 1: Sentence Splitting and Context Creation
+
+- Split the post into individual sentences
+- Create context for each sentence using 2 preceding and 2 following sentences
+- Build contextual understanding for accurate extraction
+
+### Step 2: Selection
+
+For each sentence:
+- **Discard** sentences with no verifiable information
+- **Rewrite** sentences containing both verifiable and unverifiable information (retain only verifiable parts)
+- **Keep** sentences containing only verifiable information
+
+### Step 3: Disambiguation
+
+Resolve two types of ambiguity:
+
+<AccordionGroup>
+  <Accordion title="Referential Ambiguity" icon="question">
+    Unclear references like "They," "the policy," or "next year" that require context to understand.
+    
+    **Example**: "They will update the policy next year" → Ambiguous without knowing who "They" refers to
+  </Accordion>
+  
+  <Accordion title="Structural Ambiguity" icon="sitemap">
+    Grammatical structures allowing multiple interpretations.
+    
+    **Example**: "AI has advanced renewable energy and sustainable agriculture at Company A and Company B" could mean:
+    - (1) AI advanced both at both companies, or
+    - (2) AI advanced renewable energy at Company A, sustainable agriculture at Company B
+  </Accordion>
+</AccordionGroup>
+
+**Resolution Standard**: A group of readers would likely agree on the correct interpretation based on available context.
+
+### Step 4: Decomposition
+
+- Identify all specific, verifiable propositions
+- Ensure each proposition is **decontextualized** (self-contained and understandable in isolation)
+- Create the simplest possible discrete units of information
+- If no verifiable claims exist, return an extractive summary of the central idea
+
+## Prompting Strategies
+
+CheckThat AI uses advanced prompting techniques to guide the normalization process:
+
+### System Prompt Structure
+
+```python
+sys_prompt = """
+# Identity
+You are ClaimNorm, a helpful AI assistant and an expert in claim 
+detection, extraction, and normalization.
+
+# Instructions
+* Detect, extract, and respond with a normalized claim
+* A claim is a statement that can be objectively verified as true or 
+  false based on empirical evidence
+* Use only words from the original input text
+* The claim must be strictly extracted without adding inferred context
+* Return a concise single sentence (up to 25 words)
+* Make the claim self-contained and verifiable
+* Return in the style of a news bulletin headline
+"""
+```
+
+<Note>
+The full system prompt is defined in `api/_utils/prompts.py:3-53` and includes detailed step-by-step instructions for the normalization process.
+</Note>
+
+### Chain-of-Thought Trigger
+
+```python
+chain_of_thought_trigger = "Let's think step by step."
+```
+
+This simple trigger activates step-by-step reasoning in the LLM, improving claim quality.
+
+### Few-Shot Examples
+
+CheckThat AI uses few-shot learning with both standard and chain-of-thought examples:
+
+<CodeGroup>
+
+```python Standard Few-Shot
+# Example from api/_utils/prompts.py:59-118
+few_shot_prompt = """
+<user_query id="example-1">
+Lieutenant Retired General Asif Mumtaz appointed as Chairman 
+Pakistan Medical Commission PMC...
+</user_query>
+
+<assistant_response id="example-1">
+Pakistani government appoints former army general to head 
+medical regulatory body.
+</assistant_response>
+"""
+```
+
+```python Chain-of-Thought Few-Shot
+# Example from api/_utils/prompts.py:120-215
+few_shot_CoT_prompt = """
+<assistant_response id="example-1">
+1. **Identify the actor:** "Lieutenant Retired General Asif Mumtaz."
+2. **Find the action:** He is "appointed as Chairman."
+3. **Clarify the institution:** "Pakistan Medical Commission (PMC)" 
+   is Pakistan's medical regulator.
+4. **Infer the agent:** Such appointments are made by the 
+   Pakistani government.
+5. **Condense & rephrase:** Government appoints ex-army general to 
+   lead medical regulatory body.
+
+Normalized claim: Pakistani government appoints former army general 
+to head medical regulatory body.
+</assistant_response>
+"""
+```
+
+</CodeGroup>
+
+## Real Normalization Examples
+
+<CardGroup cols={2}>
+  <Card title="Example 1: Health Misinformation" icon="heartbeat">
+    **Original Post**:
+    ```
+    Corona virus before it reaches the lungs it remains in the 
+    throat for four days … drinking water a lot and gargling 
+    with warm water & salt or vinegar eliminates the virus …
+    ```
+    
+    **Normalized Claim**:
+    ```
+    Gargling water can protect against coronavirus
+    ```
+    
+    **Transformation**: Removed timeline details, focused on central verifiable claim
+  </Card>
+  
+  <Card title="Example 2: Celebrity Content" icon="star">
+    **Original Post**:
+    ```
+    A priceless clip of 1970 of Bruce Lee playing Table Tennis 
+    with his Nan-chak !! His focus on speed...
+    ```
+    
+    **Normalized Claim**:
+    ```
+    Late actor and martial artist Bruce Lee playing table 
+    tennis with a set of nunchucks.
+    ```
+    
+    **Transformation**: Added clarifying context ("late actor"), removed subjective assessment ("priceless", "focus on speed")
+  </Card>
+</CardGroup>
+
+## Quality Guidelines
+
+Normalized claims must meet these criteria:
+
+<Steps>
+  <Step title="Verifiability">
+    The claim can be independently verified using reliable sources
+  </Step>
+  
+  <Step title="Self-Containment">
+    The claim is fully understandable without the original post
+  </Step>
+  
+  <Step title="Conciseness">
+    Maximum 25 words, capturing the main point
+  </Step>
+  
+  <Step title="Extractive">
+    Uses only words from the original input (minor clarifications allowed)
+  </Step>
+  
+  <Step title="Factual">
+    No subjective opinions, speculations, or interpretations
+  </Step>
+  
+  <Step title="Check-Worthy">
+    Important enough to warrant fact-checking
+  </Step>
+</Steps>
+
+## Important Named Entity Handling
+
+<Warning>
+If the input text contains Named Entities (people, organizations, locations), they **must** be included in the normalized claim to maintain factual accuracy.
+</Warning>
+
+```python Example with Named Entities
+# From api/_utils/prompts.py:186-194
+Original: "Scientists at St. Austin University in North Carolina, 
+they investigated the benefits of vaginal or cervical mucus 
+consumption and the results were amazing..."
+
+Normalized Claim: "St.Austin University North Carolina says eating 
+vaginal fluid makes you immune to cancer"
+
+# Named entities "St. Austin University" and "North Carolina" 
+# are preserved
+```
+
+## API Integration
+
+The normalization process is integrated throughout the CheckThat AI API:
+
+```python Implementation Example
+from api._utils.prompts import sys_prompt, instruction, chain_of_thought_trigger
+
+# Construct user prompt
+user_prompt = f"""
+{instruction}{user_input}
+
+{chain_of_thought_trigger}
+"""
+
+# Generate normalized claim
+response = client.generate_response(
+    user_prompt=user_prompt,
+    sys_prompt=sys_prompt
+)
+
+normalized_claim = response.choices[0].message.content
+```
+
+<Tip>
+CheckThat AI supports multiple AI models for claim normalization including GPT, Claude, Gemini, Grok, Llama, and DeepSeek. See [Supported Models](/concepts/supported-models) for the complete list.
+</Tip>
+
+## Next Steps
+
+After normalization, claims can be further improved through:
+
+<CardGroup cols={2}>
+  <Card title="Refinement Pipeline" icon="arrows-rotate" href="/concepts/refinement-pipeline">
+    Iteratively improve claim quality using self-refine and cross-refine algorithms
+  </Card>
+  
+  <Card title="Evaluation Metrics" icon="chart-line" href="/concepts/evaluation-metrics">
+    Assess claim quality using G-Eval and other metrics
+  </Card>
+</CardGroup>

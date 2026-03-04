@@ -1,0 +1,740 @@
+---
+title: 'Chat Completions'
+description: 'OpenAI-compatible chat completions API with CheckThat AI enhancements'
+---
+
+## Overview
+
+The `/v1/chat/completions` endpoint provides an **OpenAI-compatible API** with CheckThat AI's advanced claim normalization and evaluation features. This endpoint is designed to be a drop-in replacement for OpenAI's API with additional capabilities.
+
+## Endpoint
+
+```
+POST /v1/chat/completions
+```
+
+## Authentication
+
+Use Bearer token authentication with your LLM provider's API key:
+
+```http
+Authorization: Bearer sk-proj-your-api-key
+```
+
+See [Authentication](/api/authentication) for details.
+
+## Standard OpenAI Parameters
+
+All standard OpenAI parameters are supported:
+
+<ParamField path="messages" type="array" required>
+  Array of message objects comprising the conversation.
+  
+  Each message must have:
+  - `role` (string): `system`, `user`, or `assistant`
+  - `content` (string): Message content
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The LLM model to use. Supports all CheckThat AI models:
+  - OpenAI: `gpt-4o`, `gpt-5-2025-08-07`, `o3-2025-04-16`, etc.
+  - Anthropic: `claude-sonnet-4-20250514`, `claude-opus-4-1-20250805`
+  - Google: `gemini-2.5-pro`, `gemini-2.5-flash`
+  - xAI: `grok-3`, `grok-4-0709`, `grok-3-mini`
+  - Together AI: `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free`
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Whether to stream the response. When `true`, responses are sent as Server-Sent Events (SSE).
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Sampling temperature (0.0 to 2.0). Higher values make output more random.
+</ParamField>
+
+<ParamField path="max_tokens" type="integer">
+  Maximum number of tokens to generate.
+</ParamField>
+
+<ParamField path="max_completion_tokens" type="integer">
+  Alternative to `max_tokens` for specifying maximum completion length.
+</ParamField>
+
+<ParamField path="top_p" type="number" default="1.0">
+  Nucleus sampling parameter (0.0 to 1.0).
+</ParamField>
+
+<ParamField path="frequency_penalty" type="number" default="0.0">
+  Penalty for token frequency (-2.0 to 2.0).
+</ParamField>
+
+<ParamField path="presence_penalty" type="number" default="0.0">
+  Penalty for token presence (-2.0 to 2.0).
+</ParamField>
+
+<ParamField path="stop" type="string | array">
+  Stop sequences where the API will stop generating.
+</ParamField>
+
+<ParamField path="n" type="integer" default="1">
+  Number of completions to generate (1 to 128).
+</ParamField>
+
+<ParamField path="logprobs" type="boolean" default="false">
+  Whether to return log probabilities.
+</ParamField>
+
+<ParamField path="top_logprobs" type="integer">
+  Number of most likely tokens to return (0 to 20).
+</ParamField>
+
+<ParamField path="reasoning_effort" type="string">
+  For reasoning models (o3, o4-mini): `low`, `medium`, or `high`.
+</ParamField>
+
+<ParamField path="response_format" type="object">
+  Specify output format. Supports structured output for compatible models.
+</ParamField>
+
+<ParamField path="tools" type="array">
+  List of tools the model can call.
+</ParamField>
+
+<ParamField path="tool_choice" type="string | object">
+  Controls which tool is called.
+</ParamField>
+
+## CheckThat AI Custom Parameters
+
+These parameters enable CheckThat AI's advanced features:
+
+<ParamField path="refine_claims" type="boolean" default="false">
+  Enable automatic claim refinement through iterative evaluation.
+  
+  When enabled, CheckThat AI will:
+  1. Generate initial response
+  2. Evaluate claim quality
+  3. Iteratively improve the claim until threshold is met
+</ParamField>
+
+<ParamField path="refine_model" type="string">
+  Model to use for claim refinement. Can be different from the main model.
+  
+  Example: Use `gpt-4o` for refinement even if using `gpt-3.5-turbo` for generation.
+</ParamField>
+
+<ParamField path="refine_threshold" type="number" default="0.5">
+  Quality threshold (0.0 to 1.0) for claim refinement.
+  
+  Claims scoring below this threshold will be refined.
+</ParamField>
+
+<ParamField path="refine_max_iters" type="integer" default="3">
+  Maximum refinement iterations before stopping.
+</ParamField>
+
+<ParamField path="refine_metrics" type="any">
+  DeepEval metrics to use for claim evaluation.
+  
+  Can be a metric name or custom metric instance.
+</ParamField>
+
+<ParamField path="checkthat_api_key" type="string">
+  API key for the refinement model (if different from main API key).
+</ParamField>
+
+## Response Format
+
+### Non-Streaming Response
+
+Standard OpenAI `ChatCompletion` object with CheckThat AI extensions:
+
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1709567890,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Normalized claim: The Earth is a spherical planet..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 100,
+    "total_tokens": 120
+  },
+  "evaluation_report": null,
+  "refinement_metadata": {
+    "metric_used": "AnswerRelevancyMetric",
+    "threshold": 0.7,
+    "refinement_model": "gpt-4o",
+    "refinement_history": [
+      {
+        "claim_type": "original",
+        "claim": "Original claim text",
+        "score": 0.65,
+        "feedback": "Claim needs clarification"
+      },
+      {
+        "claim_type": "refined",
+        "claim": "Improved claim text",
+        "score": 0.85,
+        "feedback": "Claim meets quality threshold"
+      }
+    ]
+  },
+  "checkthat_metadata": {
+    "features_applied": {
+      "refine_claims": true,
+      "post_norm_eval_metrics": false,
+      "save_eval_report": false
+    }
+  }
+}
+```
+
+### Response Fields
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the completion
+</ResponseField>
+
+<ResponseField name="object" type="string" required>
+  Object type: `chat.completion`
+</ResponseField>
+
+<ResponseField name="created" type="integer" required>
+  Unix timestamp of creation
+</ResponseField>
+
+<ResponseField name="model" type="string" required>
+  Model used for generation
+</ResponseField>
+
+<ResponseField name="choices" type="array" required>
+  Array of completion choices
+  
+  <Expandable title="Choice object">
+    <ResponseField name="index" type="integer">
+      Choice index
+    </ResponseField>
+    
+    <ResponseField name="message" type="object">
+      Generated message
+      
+      <Expandable title="Message object">
+        <ResponseField name="role" type="string">
+          Always `assistant`
+        </ResponseField>
+        
+        <ResponseField name="content" type="string">
+          Generated text content
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="finish_reason" type="string">
+      Why generation stopped: `stop`, `length`, `content_filter`, etc.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object" required>
+  Token usage information
+  
+  <Expandable title="Usage object">
+    <ResponseField name="prompt_tokens" type="integer">
+      Tokens in the prompt
+    </ResponseField>
+    
+    <ResponseField name="completion_tokens" type="integer">
+      Tokens in the completion
+    </ResponseField>
+    
+    <ResponseField name="total_tokens" type="integer">
+      Total tokens used
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="evaluation_report" type="object | null">
+  Post-normalization evaluation results (CheckThat AI extension)
+</ResponseField>
+
+<ResponseField name="refinement_metadata" type="object | null">
+  Claim refinement metadata (CheckThat AI extension)
+  
+  <Expandable title="Refinement metadata">
+    <ResponseField name="metric_used" type="string">
+      Evaluation metric applied
+    </ResponseField>
+    
+    <ResponseField name="threshold" type="number">
+      Quality threshold used
+    </ResponseField>
+    
+    <ResponseField name="refinement_model" type="string">
+      Model used for refinement
+    </ResponseField>
+    
+    <ResponseField name="refinement_history" type="array">
+      History of refinement iterations
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="checkthat_metadata" type="object | null">
+  Additional CheckThat AI metadata
+</ResponseField>
+
+### Streaming Response
+
+Server-Sent Events (SSE) format:
+
+```
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1709567890,"model":"gpt-4o","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1709567890,"model":"gpt-4o","choices":[{"index":0,"delta":{"content":"The"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1709567890,"model":"gpt-4o","choices":[{"index":0,"delta":{"content":" Earth"},"finish_reason":null}]}
+
+...
+
+data: [DONE]
+```
+
+## Example Requests
+
+### Basic Request
+
+```bash
+curl -X POST https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Is this claim accurate: The Earth is flat."}
+    ]
+  }'
+```
+
+### With Streaming
+
+```bash
+curl -X POST https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Normalize this claim: Vaccines cause autism."}
+    ],
+    "stream": true
+  }'
+```
+
+### With Claim Refinement
+
+```bash
+curl -X POST https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Climate change is destroying the planet."}
+    ],
+    "refine_claims": true,
+    "refine_model": "gpt-4o",
+    "refine_threshold": 0.7,
+    "refine_max_iters": 3,
+    "checkthat_api_key": "sk-proj-your-openai-key"
+  }'
+```
+
+### With System Prompt
+
+```bash
+curl -X POST https://api.checkthat-ai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-proj-your-openai-key" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a fact-checking assistant. Normalize claims for verification."
+      },
+      {
+        "role": "user",
+        "content": "5G networks cause COVID-19."
+      }
+    ]
+  }'
+```
+
+### Python with OpenAI SDK
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-proj-your-openai-key",
+    base_url="https://api.checkthat-ai.com/v1"
+)
+
+# Basic request
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Normalize: The moon landing was faked."}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+### Python with Streaming
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-proj-your-openai-key",
+    base_url="https://api.checkthat-ai.com/v1"
+)
+
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Analyze this claim..."}
+    ],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end='', flush=True)
+```
+
+### Python with Claim Refinement
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-proj-your-openai-key",
+    base_url="https://api.checkthat-ai.com/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "The Great Wall of China is visible from space."}
+    ],
+    # CheckThat AI custom parameters via extra_body
+    extra_body={
+        "refine_claims": True,
+        "refine_model": "gpt-4o",
+        "refine_threshold": 0.8,
+        "refine_max_iters": 3,
+        "checkthat_api_key": "sk-proj-your-openai-key"
+    }
+)
+
+print(response.choices[0].message.content)
+
+# Access refinement metadata
+if hasattr(response, 'refinement_metadata'):
+    print(f"\nRefinement iterations: {len(response.refinement_metadata.refinement_history)}")
+    for iteration in response.refinement_metadata.refinement_history:
+        print(f"  {iteration.claim_type}: score={iteration.score}")
+```
+
+### JavaScript/TypeScript
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-proj-your-openai-key',
+  baseURL: 'https://api.checkthat-ai.com/v1'
+});
+
+async function normalizeClaim(claim) {
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      { role: 'user', content: claim }
+    ]
+  });
+
+  return response.choices[0].message.content;
+}
+
+// Usage
+const normalized = await normalizeClaim('The Earth is flat.');
+console.log(normalized);
+```
+
+### JavaScript with Streaming
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-proj-your-openai-key',
+  baseURL: 'https://api.checkthat-ai.com/v1'
+});
+
+const stream = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'user', content: 'Normalize this claim...' }
+  ],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  const content = chunk.choices[0]?.delta?.content || '';
+  process.stdout.write(content);
+}
+```
+
+## Error Responses
+
+### Missing Authorization
+
+**Status Code:** `401 Unauthorized`
+
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+### Invalid API Key
+
+**Status Code:** `403 Forbidden`
+
+```json
+{
+  "error": "Forbidden",
+  "message": "Invalid API key",
+  "type": "authentication_error"
+}
+```
+
+### Validation Error
+
+**Status Code:** `422 Unprocessable Entity`
+
+```json
+{
+  "error": "Validation Error",
+  "details": [
+    {
+      "loc": ["body", "messages"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
+
+### Bad Request
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid parameter value",
+  "type": "validation_error"
+}
+```
+
+### Server Error
+
+**Status Code:** `500 Internal Server Error`
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred while processing your request",
+  "type": "server_error"
+}
+```
+
+## Claim Refinement Process
+
+When `refine_claims: true` is set, CheckThat AI follows this process:
+
+1. **Initial Generation** - Generate response using specified model
+2. **Quality Evaluation** - Evaluate claim using DeepEval metrics
+3. **Refinement Loop** - If score < threshold:
+   - Generate feedback on claim quality
+   - Refine claim based on feedback
+   - Re-evaluate refined claim
+   - Repeat until threshold met or max iterations reached
+4. **Return Enhanced Response** - Include refinement metadata
+
+### Refinement Metrics
+
+Supported evaluation metrics (via DeepEval):
+
+- `AnswerRelevancyMetric` - Measures answer relevance to query
+- `FaithfulnessMetric` - Checks factual consistency
+- `ContextualPrecisionMetric` - Evaluates precision in context
+- `ContextualRecallMetric` - Measures information recall
+- `ContextualRelevancyMetric` - Assesses contextual relevance
+- Custom metrics via DeepEval
+
+### Refinement Example
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "COVID-19 vaccines alter DNA."}],
+    extra_body={
+        "refine_claims": True,
+        "refine_model": "gpt-4o",
+        "refine_threshold": 0.75,
+        "refine_max_iters": 5,
+        "refine_metrics": "AnswerRelevancyMetric"
+    }
+)
+
+# Response includes refinement history
+# refinement_history[0]: original claim (score: 0.60)
+# refinement_history[1]: refined claim (score: 0.80)
+```
+
+## Rate Limiting
+
+Same rate limits as other endpoints:
+
+- **10 requests per 60 seconds** per IP address
+- Rate limit headers included in all responses
+- Streaming requests count as single request
+
+```http
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 9
+X-RateLimit-Reset: 1709567890
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Appropriate Models">
+    Choose models based on your needs:
+    - **gpt-4o**: High-quality general purpose
+    - **o3/o4-mini**: Advanced reasoning tasks
+    - **claude-sonnet-4**: Nuanced analysis
+    - **llama-3.3-70b**: Free tier option
+  </Accordion>
+
+  <Accordion title="Enable Streaming for UX">
+    Always use `stream: true` for user-facing applications to provide immediate feedback and better user experience.
+  </Accordion>
+
+  <Accordion title="Set Appropriate Thresholds">
+    When using claim refinement:
+    - Start with `threshold: 0.7` for most cases
+    - Use `threshold: 0.8+` for high-accuracy requirements
+    - Set `max_iters: 3-5` to balance quality and cost
+  </Accordion>
+
+  <Accordion title="Handle Errors Gracefully">
+    Implement retry logic with exponential backoff for transient errors. Log errors for debugging.
+  </Accordion>
+
+  <Accordion title="Monitor Token Usage">
+    Track `usage` field in responses to monitor costs and optimize prompts. Refinement increases token usage.
+  </Accordion>
+</AccordionGroup>
+
+## Implementation Details
+
+The endpoint uses a service layer architecture for clean separation of concerns:
+
+### Service Layer (`api/services/chat/completions.py`)
+
+```python
+# services/chat/completions.py:347
+def process_completion_request(
+    api_key: str,
+    validated_params: CheckThatCompletionCreateParams
+) -> Union[ChatCompletion, ChatCompletionResponse]:
+    # 1. Segregate OpenAI and CheckThat parameters
+    openai_payload, checkthat_config = self.segregate_parameters(validated_params)
+    
+    # 2. Route to appropriate LLM client
+    self.client = LLMRouter(self.model, api_key=api_key).getAPIClient()
+    
+    # 3. Handle streaming vs non-streaming
+    if openai_payload.get('stream'):
+        return self.handle_streaming_request(openai_payload, self.client)
+    else:
+        return self.handle_non_streaming_request(
+            self.client, api_key, openai_payload, checkthat_config
+        )
+```
+
+### LLM Router (`api/_utils/LLMRouter.py`)
+
+Automatically selects the correct client based on model:
+
+```python
+# _utils/LLMRouter.py
+class LLMRouter:
+    def __init__(self, model: str, api_key: str):
+        self.model = model
+        self.api_key = api_key
+    
+    def getAPIClient(self):
+        if model in OPENAI_MODELS:
+            return OpenAIModel(model, api_key)
+        elif model in ANTHROPIC_MODELS:
+            return AnthropicModel(model, api_key)
+        # ... etc
+```
+
+## Comparison with Standard OpenAI API
+
+| Feature | OpenAI API | CheckThat AI |
+|---------|-----------|--------------|
+| Chat completions | ✅ | ✅ |
+| Streaming | ✅ | ✅ |
+| Function calling | ✅ | ✅ |
+| Multi-provider support | ❌ | ✅ |
+| Claim refinement | ❌ | ✅ |
+| Evaluation metrics | ❌ | ✅ |
+| Refinement metadata | ❌ | ✅ |
+| Drop-in compatible | N/A | ✅ |
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Chat Endpoint" icon="comments" href="/api/chat">
+    Simplified streaming chat interface
+  </Card>
+  <Card title="Models" icon="list" href="/api/models">
+    List all available models
+  </Card>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Authentication methods and setup
+  </Card>
+  <Card title="Batch Processing" icon="layer-group" href="/api/batch-processing">
+    Process multiple claims efficiently
+  </Card>
+</CardGroup>

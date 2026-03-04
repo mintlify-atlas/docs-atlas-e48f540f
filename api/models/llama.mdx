@@ -1,0 +1,353 @@
+---
+title: "Llama Models"
+description: "Use Meta's Llama models via Together AI with CheckThat API"
+---
+
+## Overview
+
+CheckThat integrates with Meta's Llama models through Together AI, providing access to open-source language models with strong performance on reasoning and generation tasks. Llama models offer cost-effective AI capabilities with transparent, open-source architecture.
+
+## Available Models
+
+The following Llama models are available through CheckThat via Together AI:
+
+<ParamField path="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free" type="string">
+  **Llama 3.3 70B** - High-performance 70B parameter model optimized for instruction following. Free tier available.
+</ParamField>
+
+<ParamField path="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" type="string">
+  **DeepSeek R1 Distill Llama 70B** - Distilled reasoning model based on Llama architecture. Free tier available.
+</ParamField>
+
+## Configuration
+
+### API Key Setup
+
+<ParamField path="api_key" type="string" required>
+  Your Together AI API key. Get your key from [Together AI Platform](https://api.together.xyz/settings/api-keys).
+</ParamField>
+
+<ParamField path="model" type="string" required>
+  The full model identifier from the available models list above.
+</ParamField>
+
+### Request Parameters
+
+Llama models through Together AI use OpenAI-compatible parameters:
+
+<ParamField path="messages" type="array" required>
+  Array of message objects with `role` and `content` fields.
+  ```json
+  [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ]
+  ```
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1.0">
+  Controls randomness in responses. Range: 0.0 to 2.0.
+</ParamField>
+
+<ParamField path="max_tokens" type="integer">
+  Maximum number of tokens to generate in the response.
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Enable streaming responses for real-time output.
+</ParamField>
+
+<ParamField path="response_format" type="object">
+  Structured output format specification (JSON object with schema).
+</ParamField>
+
+## Usage Examples
+
+### Basic Chat Completion
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "provider": "together",
+    "together_api_key": "YOUR_TOGETHER_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are a helpful AI assistant."},
+        {"role": "user", "content": "Explain the principles of clean code."}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### Streaming Response
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "provider": "together",
+    "together_api_key": "YOUR_TOGETHER_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Write a detailed guide on microservices architecture."}
+    ],
+    "stream": True
+}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as response:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode('utf-8'))
+```
+
+### Structured Output
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+schema = {
+    "type": "object",
+    "properties": {
+        "language": {"type": "string"},
+        "framework": {"type": "string"},
+        "use_cases": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "difficulty": {
+            "type": "string",
+            "enum": ["beginner", "intermediate", "advanced"]
+        }
+    },
+    "required": ["language", "framework"]
+}
+
+payload = {
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "provider": "together",
+    "together_api_key": "YOUR_TOGETHER_API_KEY",
+    "messages": [
+        {"role": "user", "content": "Describe Python Flask for web development."}
+    ],
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "framework_description",
+            "schema": schema
+        }
+    }
+}
+
+response = requests.post(url, json=payload, headers=headers)
+result = response.json()
+print(result)
+```
+
+### Multi-turn Conversation
+
+```python
+import requests
+
+url = "https://api.checkthat.ai/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_CHECKTHAT_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "provider": "together",
+    "together_api_key": "YOUR_TOGETHER_API_KEY",
+    "messages": [
+        {"role": "system", "content": "You are a programming tutor."},
+        {"role": "user", "content": "What is recursion?"},
+        {"role": "assistant", "content": "Recursion is when a function calls itself to solve a problem by breaking it into smaller instances."},
+        {"role": "user", "content": "Can you show me a simple example?"}
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+## Features and Capabilities
+
+### OpenAI-Compatible API
+
+Together AI provides an OpenAI-compatible API for Llama models (`togetherAI.py:19-232`), making integration seamless:
+- Standard message format
+- Familiar parameter names
+- Compatible response structure
+
+### Structured Output Support
+
+Llama 3.3 70B supports structured outputs via Together AI's JSON object mode (`togetherAI.py:75-138`):
+
+```python
+response = client.chat.completions.create(
+    messages=messages,
+    model=model,
+    response_format={
+        "type": "json_object",
+        "schema": schema,
+    }
+)
+```
+
+**Supported Models:**
+- meta-llama/Llama-3.3-70B-Instruct-Turbo-Free
+
+### Conversation History Management
+
+Automatic formatting using OpenAI message format (`togetherAI.py:34-39`):
+```python
+if conversation_history:
+    messages = conversation_manager.format_for_openai(
+        sys_prompt, conversation_history, user_prompt
+    )
+```
+
+### Streaming Support
+
+Real-time streaming with chunk-by-chunk delivery (`togetherAI.py:52-73`):
+```python
+stream = client.chat.completions.create(
+    messages=messages,
+    model=model,
+    stream=True
+)
+for chunk in stream:
+    if hasattr(chunk, 'choices') and chunk.choices:
+        yield chunk.choices[0].delta.content
+```
+
+### OpenAI Response Compatibility
+
+Together AI responses are already OpenAI-compatible, but CheckThat ensures consistency (`togetherAI.py:140-232`):
+- Preserves all standard OpenAI fields
+- Adds Together AI-specific extensions (warnings, seed)
+- Maintains usage statistics
+
+## Implementation Details
+
+CheckThat's Together AI integration (`togetherAI.py:19-232`) provides:
+
+- **Together SDK**: Uses official `together` Python SDK
+- **OpenAI compatibility**: Seamless integration with OpenAI-style APIs
+- **Structured outputs**: JSON object mode with schema validation
+- **Response transformation**: Ensures consistent OpenAI format
+
+### Structured Response Object
+
+For JSON schema responses, CheckThat returns a `StructuredResponse` object:
+```python
+class StructuredResponse:
+    def __init__(self, content: str, parsed: Any):
+        self.content = content  # Raw JSON string
+        self.parsed = parsed    # Parsed Python object
+```
+
+### Together AI Extensions
+
+Responses may include Together AI-specific fields:
+```python
+{
+    "togetherai_warnings": [...],  # API warnings if any
+    "togetherai_seed": 12345        # Reproducibility seed
+}
+```
+
+## Rate Limits and Pricing
+
+### Free Tier Models
+
+Both available Llama models offer free tier access through Together AI:
+- **Llama 3.3 70B Turbo**: Free with rate limits
+- **DeepSeek R1 Distill Llama 70B**: Free with rate limits
+
+Rate limits vary by account tier. Check [Together AI pricing](https://www.together.ai/pricing) for details.
+
+### Paid Tier
+
+Paid tiers offer:
+- Higher rate limits
+- Priority access
+- Additional model variants
+- Enhanced support
+
+## Error Handling
+
+```python
+try:
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+    
+    # Check for Together AI warnings
+    if 'togetherai_warnings' in result:
+        for warning in result['togetherai_warnings']:
+            print(f"Warning: {warning}")
+except requests.exceptions.HTTPError as e:
+    if e.response.status_code == 400:
+        print(f"Bad request: {e.response.json()}")
+    elif e.response.status_code == 401:
+        print("Invalid Together AI API key")
+    elif e.response.status_code == 429:
+        print("Rate limit exceeded")
+    else:
+        print(f"API Error: {e}")
+except Exception as e:
+    print(f"Request failed: {e}")
+```
+
+Common error codes:
+- **400**: Invalid request format or parameters
+- **401**: Invalid API key
+- **429**: Rate limit exceeded
+- **500**: Together AI service error
+
+## Best Practices
+
+1. **Use free tier wisely**: Take advantage of free models for development and testing
+2. **Implement rate limiting**: Handle 429 errors with exponential backoff
+3. **Leverage structured outputs**: Use JSON schema for reliable data extraction
+4. **Stream for long responses**: Enable streaming for better UX on lengthy generations
+5. **Monitor warnings**: Check `togetherai_warnings` for API guidance
+6. **System prompts matter**: Llama models respond well to clear system instructions
+7. **Test with Llama 3.3**: Start with the 70B model for best balance of cost and quality
+8. **Conversation context**: Include relevant history for coherent multi-turn dialogues
+
+## Model Comparison
+
+### Llama 3.3 70B Instruct Turbo
+- **Best for**: General-purpose tasks, instruction following, balanced performance
+- **Context window**: Extended context support
+- **Speed**: Optimized turbo inference
+- **Free tier**: Yes
+
+### DeepSeek R1 Distill Llama 70B
+- **Best for**: Reasoning tasks, mathematical problems, logical analysis
+- **Context window**: Standard context support
+- **Speed**: Standard inference
+- **Free tier**: Yes

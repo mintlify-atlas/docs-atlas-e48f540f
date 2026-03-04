@@ -1,0 +1,622 @@
+---
+title: 'Environment Variables'
+description: 'Complete reference for all environment variables in CheckThat AI'
+icon: 'key'
+---
+
+## Overview
+
+CheckThat AI uses environment variables to configure API keys, database connections, and application settings. This page provides a comprehensive reference for all available environment variables.
+
+<Warning>
+  **Never commit environment variables to version control.** Use `.env` files for local development and secrets management for production.
+</Warning>
+
+## Quick Setup
+
+<CodeGroup>
+  ```bash Local Development (.env)
+  # Copy this template and fill in your values
+  cp .env.example .env
+  ```
+
+  ```bash Linux/macOS Export
+  export OPENAI_API_KEY="your-api-key-here"
+  export ANTHROPIC_API_KEY="your-api-key-here"
+  ```
+
+  ```powershell Windows PowerShell
+  $env:OPENAI_API_KEY="your-api-key-here"
+  $env:ANTHROPIC_API_KEY="your-api-key-here"
+  ```
+</CodeGroup>
+
+## Model Provider API Keys
+
+Configure API keys for the AI model providers you plan to use. **At least one provider is required.**
+
+### OpenAI
+
+<ParamField path="OPENAI_API_KEY" type="string" required>
+  OpenAI API key for GPT models (GPT-4, GPT-4o, GPT-4.1).
+
+  **How to get:**
+  1. Sign up at [platform.openai.com](https://platform.openai.com)
+  2. Navigate to API Keys section
+  3. Create a new secret key
+
+  **Format:** `sk-proj-...` or `sk-...`
+
+  **Supported Models:**
+  - `gpt-4`
+  - `gpt-4o`
+  - `gpt-4-turbo`
+  - `gpt-4-32k`
+  - `gpt-3.5-turbo`
+
+  <CodeGroup>
+    ```bash Linux/macOS
+    export OPENAI_API_KEY="sk-proj-xxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    ```powershell Windows
+    $env:OPENAI_API_KEY="sk-proj-xxxxxxxxxxxxxxxxxxxx"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Anthropic (Claude)
+
+<ParamField path="ANTHROPIC_API_KEY" type="string" required>
+  Anthropic API key for Claude models (Claude 3.7 Sonnet, Claude 3.5 Sonnet).
+
+  **How to get:**
+  1. Sign up at [console.anthropic.com](https://console.anthropic.com)
+  2. Navigate to API Keys
+  3. Create a new API key
+
+  **Format:** `sk-ant-api03-...`
+
+  **Supported Models:**
+  - `claude-3-7-sonnet-20250219`
+  - `claude-3-5-sonnet-20241022`
+  - `claude-3-opus-20240229`
+  - `claude-3-sonnet-20240229`
+
+  <CodeGroup>
+    ```bash Linux/macOS
+    export ANTHROPIC_API_KEY="sk-ant-api03-xxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    ```powershell Windows
+    $env:ANTHROPIC_API_KEY="sk-ant-api03-xxxxxxxxxxxxxxxxxxxx"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Google Gemini
+
+<ParamField path="GEMINI_API_KEY" type="string" required>
+  Google API key for Gemini models (Gemini 2.5 Pro, Gemini 2.5 Flash).
+
+  **How to get:**
+  1. Visit [ai.google.dev](https://ai.google.dev)
+  2. Get API key from Google AI Studio
+  3. Enable Gemini API in Google Cloud Console
+
+  **Format:** `AIzaSy...`
+
+  **Supported Models:**
+  - `gemini-2.0-flash-exp`
+  - `gemini-1.5-pro`
+  - `gemini-1.5-flash`
+
+  <CodeGroup>
+    ```bash Linux/macOS
+    export GEMINI_API_KEY="AIzaSyxxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    ```powershell Windows
+    $env:GEMINI_API_KEY="AIzaSyxxxxxxxxxxxxxxxxxxxx"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### xAI (Grok)
+
+<ParamField path="GROK_API_KEY" type="string" required>
+  xAI API key for Grok models.
+
+  **How to get:**
+  1. Sign up at [x.ai](https://x.ai)
+  2. Access the developer console
+  3. Generate an API key
+
+  **Format:** `xai-...`
+
+  **Supported Models:**
+  - `grok-3`
+  - `grok-beta`
+  - `grok-vision-beta`
+
+  <CodeGroup>
+    ```bash Linux/macOS
+    export GROK_API_KEY="xai-xxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    ```powershell Windows
+    $env:GROK_API_KEY="xai-xxxxxxxxxxxxxxxxxxxx"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Together.ai (Llama)
+
+<ParamField path="TOGETHER_API_KEY" type="string">
+  Together.ai API key for Llama models.
+
+  **How to get:**
+  1. Sign up at [together.ai](https://together.ai)
+  2. Navigate to API section
+  3. Create a new API key
+
+  **Format:** Variable format
+
+  **Supported Models:**
+  - `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free` (Free tier available)
+  - `meta-llama/Llama-3.1-70B-Instruct-Turbo`
+  - `meta-llama/Llama-3.1-8B-Instruct-Turbo`
+
+  <Note>
+    Together.ai offers free tier models that don't require an API key for basic usage.
+  </Note>
+
+  <CodeGroup>
+    ```bash Linux/macOS
+    export TOGETHER_API_KEY="xxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    ```powershell Windows
+    $env:TOGETHER_API_KEY="xxxxxxxxxxxxxxxxxxxx"
+    ```
+  </CodeGroup>
+</ParamField>
+
+## Database Configuration (Supabase)
+
+Supabase is used for authentication and storing conversation history.
+
+### Supabase URL
+
+<ParamField path="SUPABASE_URL" type="string" required>
+  Your Supabase project URL.
+
+  **How to get:**
+  1. Create project at [supabase.com](https://supabase.com)
+  2. Go to Project Settings → API
+  3. Copy the Project URL
+
+  **Format:** `https://xxxxxxxxxxxxx.supabase.co`
+
+  <CodeGroup>
+    ```bash Backend
+    export SUPABASE_URL="https://xxxxxxxxxxxxx.supabase.co"
+    ```
+
+    ```bash Frontend
+    export VITE_SUPABASE_URL="https://xxxxxxxxxxxxx.supabase.co"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Supabase Anonymous Key
+
+<ParamField path="SUPABASE_ANON_KEY" type="string" required>
+  Public anonymous key for client-side authentication.
+
+  **How to get:**
+  1. Supabase Project Settings → API
+  2. Copy the `anon` `public` key
+
+  **Security:** Safe to expose in frontend code (protected by Row Level Security)
+
+  **Format:** `eyJhbGc...`
+
+  <CodeGroup>
+    ```bash Frontend
+    export VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Supabase Service Key
+
+<ParamField path="SUPABASE_SERVICE_KEY" type="string" required>
+  Server-side service key with admin privileges.
+
+  **How to get:**
+  1. Supabase Project Settings → API
+  2. Copy the `service_role` `secret` key
+
+  **Security:** **NEVER expose in frontend code.** Backend only.
+
+  **Format:** `eyJhbGc...`
+
+  <Warning>
+    This key bypasses Row Level Security. Only use on the backend server.
+  </Warning>
+
+  <CodeGroup>
+    ```bash Backend Only
+    export SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Supabase JWT Secret
+
+<ParamField path="SUPABASE_JWT_SECRET" type="string" required>
+  JWT secret for verifying authentication tokens.
+
+  **How to get:**
+  1. Supabase Project Settings → API
+  2. Copy the JWT Secret
+
+  **Security:** Backend only, used for JWT validation.
+
+  **Format:** Long random string
+
+  <CodeGroup>
+    ```bash Backend Only
+    export SUPABASE_JWT_SECRET="your-jwt-secret-here"
+    ```
+  </CodeGroup>
+</ParamField>
+
+## Application Configuration
+
+### Environment Type
+
+<ParamField path="ENV_TYPE" type="string" default="dev">
+  Application environment type.
+
+  **Values:**
+  - `dev` - Development mode with verbose logging and permissive CORS
+  - `prod` - Production mode with optimized settings
+
+  **Effects:**
+  - Logging verbosity (DEBUG vs INFO)
+  - CORS origin configuration
+  - Error message detail level
+
+  <CodeGroup>
+    ```bash Development
+    export ENV_TYPE="dev"
+    ```
+
+    ```bash Production
+    export ENV_TYPE="prod"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### CORS Origins
+
+<ParamField path="CORS_ORIGINS" type="string" default="*">
+  Comma-separated list of allowed CORS origins.
+
+  **Values:**
+  - `*` - Allow all origins (public API)
+  - Specific domains: `https://www.checkthat-ai.com,https://checkthat-ai.com`
+
+  **Security:**
+  - Use `*` for public APIs
+  - Specify domains for private APIs
+
+  <CodeGroup>
+    ```bash Public API
+    export CORS_ORIGINS="*"
+    ```
+
+    ```bash Restricted Access
+    export CORS_ORIGINS="https://www.checkthat-ai.com,https://app.example.com"
+    ```
+  </CodeGroup>
+</ParamField>
+
+### Logging Level
+
+<ParamField path="LOG_LEVEL" type="string" default="INFO">
+  Application logging level.
+
+  **Values:**
+  - `DEBUG` - Verbose logging (development)
+  - `INFO` - Standard logging (production)
+  - `WARNING` - Warnings and errors only
+  - `ERROR` - Errors only
+
+  <CodeGroup>
+    ```bash Development
+    export LOG_LEVEL="DEBUG"
+    ```
+
+    ```bash Production
+    export LOG_LEVEL="INFO"
+    ```
+  </CodeGroup>
+</ParamField>
+
+## Frontend-Specific Variables
+
+Frontend environment variables must be prefixed with `VITE_` to be accessible in the browser.
+
+### Backend API URL
+
+<ParamField path="VITE_BACKEND_URL" type="string" required>
+  URL of the backend API server.
+
+  **Development:** `http://localhost:8000`
+  
+  **Production:** Your deployed backend URL
+
+  <CodeGroup>
+    ```bash Development
+    export VITE_BACKEND_URL="http://localhost:8000"
+    ```
+
+    ```bash Production
+    export VITE_BACKEND_URL="https://api.checkthat-ai.com"
+    ```
+  </CodeGroup>
+</ParamField>
+
+## Environment Variable Summary
+
+### Required Variables
+
+| Variable | Component | Description |
+|----------|-----------|-------------|
+| **At least one of:** | Backend | Model provider API key |
+| `OPENAI_API_KEY` | Backend | OpenAI GPT models |
+| `ANTHROPIC_API_KEY` | Backend | Anthropic Claude models |
+| `GEMINI_API_KEY` | Backend | Google Gemini models |
+| `GROK_API_KEY` | Backend | xAI Grok models |
+| `SUPABASE_URL` | Both | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Backend | Admin access to Supabase |
+| `SUPABASE_JWT_SECRET` | Backend | JWT verification |
+| `VITE_SUPABASE_URL` | Frontend | Supabase URL for client |
+| `VITE_SUPABASE_ANON_KEY` | Frontend | Public authentication key |
+| `VITE_BACKEND_URL` | Frontend | Backend API endpoint |
+
+### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENV_TYPE` | `dev` | Environment type |
+| `CORS_ORIGINS` | `*` | Allowed CORS origins |
+| `LOG_LEVEL` | `INFO` | Logging verbosity |
+| `TOGETHER_API_KEY` | - | Together.ai Llama models |
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Local Development">
+    1. **Use `.env` files**: Create a `.env` file in the root directory
+    2. **Never commit `.env`**: Add to `.gitignore`
+    3. **Use `.env.example`**: Template without actual values
+    4. **Rotate keys regularly**: Generate new keys periodically
+
+    ```bash .gitignore
+    .env
+    .env.local
+    .env.production
+    .env.*.local
+    ```
+  </Accordion>
+
+  <Accordion title="Production Deployment">
+    1. **Use secrets management**: GitHub Secrets, Railway Variables, etc.
+    2. **Different keys per environment**: Separate dev/prod keys
+    3. **Principle of least privilege**: Only grant necessary permissions
+    4. **Monitor usage**: Track API calls and costs
+    5. **Set spending limits**: Configure budget alerts
+  </Accordion>
+
+  <Accordion title="Key Management">
+    1. **Never hardcode keys**: Always use environment variables
+    2. **Never log keys**: Exclude from logs and error messages
+    3. **Never share keys**: Use separate keys per team member
+    4. **Revoke compromised keys**: Immediately rotate exposed keys
+    5. **Use key rotation**: Change keys on a regular schedule
+  </Accordion>
+
+  <Accordion title="Frontend vs Backend">
+    1. **Backend Only**:
+       - Model provider API keys
+       - Supabase service key
+       - JWT secret
+    
+    2. **Frontend Safe** (with `VITE_` prefix):
+       - Supabase URL
+       - Supabase anonymous key
+       - Backend URL
+    
+    3. **Never expose** in frontend:
+       - Service keys
+       - Model provider API keys
+       - JWT secrets
+  </Accordion>
+</AccordionGroup>
+
+## Configuration Files
+
+### .env.example (Template)
+
+Create this file in your repository root:
+
+```bash .env.example
+# Model Provider API Keys (at least one required)
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+GEMINI_API_KEY=your-gemini-api-key
+GROK_API_KEY=your-xai-grok-key
+TOGETHER_API_KEY=your-together-api-key
+
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key
+SUPABASE_JWT_SECRET=your-jwt-secret
+
+# Application Configuration
+ENV_TYPE=dev
+CORS_ORIGINS=*
+LOG_LEVEL=INFO
+
+# Frontend Variables (VITE_ prefix required)
+VITE_BACKEND_URL=http://localhost:8000
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### .env (Local Development)
+
+Copy `.env.example` and fill in actual values:
+
+```bash
+cp .env.example .env
+# Edit .env with your actual API keys
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Variables Not Loading">
+    **Symptoms:** Application can't find API keys
+
+    **Solutions:**
+    1. Verify `.env` file location (project root)
+    2. Restart development server after changes
+    3. Check for typos in variable names
+    4. Ensure no extra spaces or quotes
+    5. Use correct prefix (`VITE_` for frontend)
+  </Accordion>
+
+  <Accordion title="CORS Errors">
+    **Symptoms:** Frontend can't connect to backend
+
+    **Solutions:**
+    1. Set `CORS_ORIGINS=*` for development
+    2. Add frontend URL to `CORS_ORIGINS` in production
+    3. Verify `VITE_BACKEND_URL` is correct
+    4. Check backend CORS configuration
+  </Accordion>
+
+  <Accordion title="Authentication Errors">
+    **Symptoms:** Supabase authentication failing
+
+    **Solutions:**
+    1. Verify all Supabase variables are set
+    2. Check Supabase project is active
+    3. Ensure JWT secret matches project
+    4. Verify Row Level Security policies
+    5. Check service key is not exposed in frontend
+  </Accordion>
+
+  <Accordion title="Model API Errors">
+    **Symptoms:** AI model requests failing
+
+    **Solutions:**
+    1. Verify API key is valid and active
+    2. Check API key has sufficient credits/quota
+    3. Ensure correct key format (no extra spaces)
+    4. Test key directly with provider's API
+    5. Check for rate limiting or spending limits
+  </Accordion>
+</AccordionGroup>
+
+## Verification Script
+
+Create a script to verify your environment configuration:
+
+```python check_env.py
+import os
+from typing import List, Tuple
+
+def check_env_vars() -> List[Tuple[str, bool]]:
+    """Check which environment variables are configured."""
+    
+    required = [
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_KEY",
+        "SUPABASE_JWT_SECRET",
+    ]
+    
+    model_providers = [
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GEMINI_API_KEY",
+        "GROK_API_KEY",
+    ]
+    
+    optional = [
+        "ENV_TYPE",
+        "CORS_ORIGINS",
+        "LOG_LEVEL",
+    ]
+    
+    results = []
+    
+    print("\n=== Required Variables ===")
+    for var in required:
+        status = bool(os.getenv(var))
+        results.append((var, status))
+        print(f"  {var}: {'✅' if status else '❌'}")
+    
+    print("\n=== Model Providers (at least one required) ===")
+    model_count = 0
+    for var in model_providers:
+        status = bool(os.getenv(var))
+        if status:
+            model_count += 1
+        results.append((var, status))
+        print(f"  {var}: {'✅' if status else '⚠️'}")
+    
+    print(f"\n  Configured providers: {model_count}")
+    if model_count == 0:
+        print("  ❌ ERROR: At least one model provider required!")
+    
+    print("\n=== Optional Variables ===")
+    for var in optional:
+        status = bool(os.getenv(var))
+        results.append((var, status))
+        value = os.getenv(var, "(not set)")
+        print(f"  {var}: {value}")
+    
+    return results
+
+if __name__ == "__main__":
+    check_env_vars()
+```
+
+Run with:
+
+```bash
+python check_env.py
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Local Setup" icon="laptop-code" href="/deployment/local-setup">
+    Set up your local development environment
+  </Card>
+  <Card title="Production Deployment" icon="rocket" href="/deployment/production">
+    Deploy to production with proper configuration
+  </Card>
+  <Card title="Model Configuration" icon="brain" href="/guides/models">
+    Configure and use different AI models
+  </Card>
+  <Card title="Security Guide" icon="shield" href="/guides/security">
+    Advanced security best practices
+  </Card>
+</CardGroup>
