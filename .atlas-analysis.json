@@ -1,0 +1,131 @@
+{
+  "projectType": "ai-ml",
+  "projectName": "CheckThat AI",
+  "projectDescription": "AI-powered platform that transforms noisy social media posts into concise, fact-checkable claims using iterative refinement with G-Eval feedback.",
+  "theme": "palm",
+  "primaryColor": "#facd32",
+  "lightColor": "#fadf8b",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/claim-normalization",
+              "concepts/refinement-pipeline",
+              "concepts/evaluation-metrics",
+              "concepts/supported-models"
+            ]
+          },
+          {
+            "group": "Web Application",
+            "pages": [
+              "webapp/chat-interface",
+              "webapp/batch-evaluation",
+              "webapp/authentication"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/prompting-strategies",
+              "guides/self-refine",
+              "guides/cross-refine",
+              "guides/custom-evaluation"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/local-setup",
+              "deployment/production",
+              "deployment/environment-variables"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/chat",
+              "api/batch-processing",
+              "api/websocket",
+              "api/health"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "api/models/openai",
+              "api/models/anthropic",
+              "api/models/gemini",
+              "api/models/llama",
+              "api/models/grok"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Research",
+        "groups": [
+          {
+            "group": "Background",
+            "pages": [
+              "research/clef-checkthat",
+              "research/claim-detection",
+              "research/fact-checking"
+            ]
+          },
+          {
+            "group": "Methodology",
+            "pages": [
+              "research/g-eval",
+              "research/meteor-scoring",
+              "research/deepeval-integration"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-model AI support (GPT-4, Claude, Gemini, Llama, Grok)",
+    "Interactive chat interface for real-time claim normalization",
+    "Batch evaluation with progress tracking",
+    "Self-Refine and Cross-Refine algorithms",
+    "G-Eval based quality assessment",
+    "METEOR scoring for automatic evaluation",
+    "WebSocket streaming for real-time responses",
+    "RESTful API with comprehensive endpoints"
+  ],
+  "publicApiSurface": [
+    "POST /api/chat - Normalize claims via chat interface",
+    "POST /api/batch/evaluate - Batch claim processing",
+    "WebSocket /ws/evaluate - Real-time evaluation progress",
+    "GET /api/models - List supported AI models",
+    "RefinementService - Core refinement pipeline",
+    "GEval metrics - Quality assessment",
+    "ClaimNormalizer - Main normalization interface"
+  ]
+}
