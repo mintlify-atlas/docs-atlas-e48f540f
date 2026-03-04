@@ -85,6 +85,7 @@
             "group": "Endpoints",
             "pages": [
               "api/chat",
+              "api/chat-completions",
               "api/batch-processing",
               "api/websocket",
               "api/health"
